@@ -3,70 +3,50 @@ const { writeFile } = require("fs/promises");
 const fetch = require("node-fetch");
 const path = require("path");
 const fs = require("fs");
+const Credit = require('../models/creditModel');
 
-// Initialize Replicate with your API Key
 const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN, // Replace with your Replicate API Key
+    auth: process.env.REPLICATE_API_TOKEN,
 });
 
+const generateImage = async (req) => {
+    const { prompt } = req.body;
+    const userId = req.user._id;
 
-
-// Image generation logic
-
-const generateImage = async (req, res) => {
-  const { prompt, userId } = req.body;
-
-  if (!prompt) {
-    return res.status(400).json({ error: "Prompt is required" });
-  }
-
-  try {
-    console.log('Starting image generation with prompt:', prompt);
-    
-    const input = { prompt };
-    const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
-      {input}
-    );
-
-    console.log('Replicate API Response:', output);
-
-    if (Array.isArray(output) && output.length > 0) {
-      const imageUrl = output[0];
-      console.log('Fetching image from:', imageUrl);
-
-      const resImage = await fetch(imageUrl);
-      if (!resImage.ok) {
-        throw new Error(`Failed to fetch image: ${resImage.statusText}`);
-      }
-
-      const buffer = await resImage.buffer();
-      const filename = `generated_${Date.now()}.png`;
-      const imagePath = path.join(__dirname, '../images', filename);
-      
-      // Ensure images directory exists
-      const imagesDir = path.join(__dirname, '../images');
-      if (!fs.existsSync(imagesDir)) {
-        fs.mkdirSync(imagesDir, { recursive: true });
-      }
-
-      await writeFile(imagePath, buffer);
-      console.log('Image saved to:', imagePath);
-
-      res.status(200).json({
-        message: "Image generated successfully",
-        imageUrl: `/images/${filename}`
-      });
-    } else {
-      throw new Error('Invalid response from Replicate API');
+    if (!prompt) {
+        throw new Error("Prompt is required");
     }
-  } catch (error) {
-    console.error('Error details:', error);
-    res.status(500).json({ 
-      error: "Error generating image",
-      details: error.message 
-    });
-  }
+
+    try {
+        console.log('Starting image generation with prompt:', prompt);
+        
+        const output = await replicate.run(
+            "black-forest-labs/flux-schnell",
+            { input: { prompt } }
+        );
+
+        if (!Array.isArray(output) || output.length === 0) {
+            throw new Error('Invalid response from Replicate API');
+        }
+
+        // Deduct credits after successful generation
+        const userCredits = await Credit.findOne({ user: userId });
+        if (userCredits) {
+            userCredits.credit -= 1;
+            await userCredits.save();
+        }
+
+        // Return the response object with all necessary data
+        return {
+            output,
+            message: "Image generated successfully",
+            remainingCredits: userCredits ? userCredits.credit : 0
+        };
+
+    } catch (error) {
+        console.error('Error in generateImage:', error);
+        throw error;
+    }
 };
 
 module.exports = { generateImage };

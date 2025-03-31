@@ -4,6 +4,7 @@ dotenv.config();
 const cors = require('cors');
 const passport = require('passport');
 const connectDB = require('./config/db');
+const paymentRoute = require('./routes/paymentRoute');
 const authRoute = require('./routes/authRoute');
 const userRoute = require('./routes/userRoute');
 const creditRoute = require('./routes/creditRoute');
@@ -31,6 +32,7 @@ app.use('/api', userRoute);
 app.use('/check', creditRoute);
 app.use('/generate', imageRoute);
 app.use('/api', profileRoute);
+app.use('/api/payment', paymentRoute);
 
 const PORT = process.env.PORT || 4000;
 
