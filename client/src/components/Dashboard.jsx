@@ -1,19 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import PaymentModal from './PaymentModal';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BackgroundImage from '../assets/bg.jpg';
-import Logo from '../assets/logo.jpg';
-import { Sun, Moon, Loader2, CreditCard, Image, History } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 import { Toaster, toast } from 'react-hot-toast';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 
+// Components
+import Navbar from './common/Navbar';
+import Footer from './common/Footer';
+import ImageGenerationForm from './dashboard/ImageGenerationForm';
+import StatsGrid from './dashboard/StatsGrid';
+import PaymentModal from './modals/PaymentModal';
+
+// Assets
+import BackgroundImage from '../assets/bg.jpg';
+
 const Dashboard = () => {
+  // Auth and Theme Context
   const { user, logout } = useAuth();
-  const { darkMode, toggleTheme } = useTheme();
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const { darkMode, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
+
+  // State Management
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [credits, setCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,6 +33,7 @@ const Dashboard = () => {
   const [generationError, setGenerationError] = useState(null);
   const [generatedImages, setGeneratedImages] = useState([]);
 
+  // Fetch credits on component mount or when user changes
   useEffect(() => {
     const fetchCredits = async () => {
       try {
@@ -40,6 +51,7 @@ const Dashboard = () => {
     fetchCredits();
   }, [user?.email]);
 
+  // Handlers
   const handleCreditUpdate = (newCredits) => {
     setCredits(newCredits);
     toast.success(`Credits updated! New balance: ${newCredits}`);
@@ -105,216 +117,81 @@ const Dashboard = () => {
     }
   };
 
-  const username = user?.email ? user.email.split('@')[0] : 'User';
-
   return (
-    <div className={`min-h-screen relative ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen flex flex-col relative overflow-hidden ${darkMode ? 'dark' : ''}`}>
       <Toaster position="top-right" />
       
       {/* Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center filter brightness-50" 
-        style={{ 
-          backgroundImage: `url(${BackgroundImage})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          backgroundAttachment: 'fixed',
-          zIndex: -1 
-        }}
-      />
-
-      {/* Navigation */}
-      <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className={`p-1 rounded-full ${darkMode ? 'bg-white' : 'bg-transparent'}`}>
-                <img src={Logo} alt="AstraPix Logo" className="h-8 w-auto" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">AstraPix</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setIsPaymentModalOpen(true)}
-                className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-all"
-              >
-                <CreditCard className="h-5 w-5" />
-                <span>Credits: {loading ? '...' : credits}</span>
-              </button>
-              <span className="text-gray-700 dark:text-gray-300 font-medium">
-                Welcome, {username}
-              </span>
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                {darkMode ? 
-                  <Sun className="text-yellow-500 h-5 w-5" /> : 
-                  <Moon className="text-gray-600 h-5 w-5" />
-                }
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-all"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg p-8 rounded-xl shadow-2xl">
-          <h2 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Dashboard</h2>
-          
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Image Generation Form */}
-          <div className="mb-8">
-            <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-              Generate Image
-            </h3>
-            <form onSubmit={handleGenerateImage} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                  Enter your prompt
-                </label>
-                <input
-                  type="text"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-white/90 dark:bg-gray-700/90 border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
-                  placeholder="A beautiful space scene..."
-                  disabled={generating || credits <= 0}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={generating || !prompt.trim() || credits <= 0}
-                className={`w-full py-2 px-4 rounded-lg ${
-                  generating || !prompt.trim() || credits <= 0
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-purple-600 hover:bg-purple-700'
-                } text-white font-semibold transition-all`}
-              >
-                {generating ? (
-                  <span className="flex items-center justify-center">
-                    <Loader2 className="animate-spin mr-2" size={20} />
-                    Generating...
-                  </span>
-                ) : credits <= 0 ? (
-                  'No credits available'
-                ) : (
-                  'Generate Image'
-                )}
-              </button>
-            </form>
-
-            {generationError && (
-              <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">
-                {generationError}
-              </div>
-            )}
-
-            {/* Generated Image Display */}
-            {generatedImage && (
-              <div className="mt-6">
-                <h4 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                  Generated Image
-                </h4>
-                <div className="relative aspect-square max-w-2xl mx-auto">
-                  <img
-                    src={generatedImage}
-                    alt="Generated artwork"
-                    className="rounded-lg shadow-xl w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error('Image load error');
-                      setGenerationError('Failed to load generated image');
-                    }}
-                  />
-                </div>
-                <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
-                  Prompt: "{prompt}"
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Stats and Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/90 dark:bg-gray-700/90 p-6 rounded-lg shadow-lg transform transition-all hover:scale-105">
-              <div className="flex items-center space-x-3 mb-4">
-                <Image className="h-6 w-6 text-purple-600" />
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                  Your Stats
-                </h3>
-              </div>
-              <div className="space-y-2">
-                <p className="text-gray-600 dark:text-gray-300">
-                  Available Credits: {loading ? 'Loading...' : credits}
-                </p>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Images Generated: {generatedImages.length}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white/90 dark:bg-gray-700/90 p-6 rounded-lg shadow-lg transform transition-all hover:scale-105">
-              <div className="flex items-center space-x-3 mb-4">
-                <CreditCard className="h-6 w-6 text-purple-600" />
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                  Buy Credits
-                </h3>
-              </div>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Purchase more credits to generate images
-              </p>
-              <button
-                onClick={() => setIsPaymentModalOpen(true)}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-all"
-              >
-                Purchase Credits
-              </button>
-            </div>
-
-            <div className="bg-white/90 dark:bg-gray-700/90 p-6 rounded-lg shadow-lg transform transition-all hover:scale-105">
-              <div className="flex items-center space-x-3 mb-4">
-                <History className="h-6 w-6 text-purple-600" />
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                  Recent Activity
-                </h3>
-              </div>
-              <div className="space-y-2">
-                {generatedImages.slice(-3).map((img, index) => (
-                  <p key={index} className="text-sm text-gray-600 dark:text-gray-300">
-                    Generated: {new Date(img.timestamp).toLocaleDateString()}
-                  </p>
-                ))}
-                {generatedImages.length === 0 && (
-                  <p className="text-gray-600 dark:text-gray-300">
-                    No recent activity
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-0">
+        <img 
+          src={BackgroundImage} 
+          alt="Background" 
+          className="w-full h-full object-cover brightness-50"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 to-indigo-600/30 backdrop-blur-sm" />
       </div>
 
-      {/* Payment Modal */}
+      {/* Navigation */}
+      <Navbar 
+        user={user}
+        credits={credits}
+        loading={loading}
+        darkMode={darkMode}
+        toggleTheme={toggleTheme}
+        handleLogout={handleLogout}
+        openPaymentModal={() => setIsPaymentModalOpen(true)}
+      />
+
+      {/* Main Content */}
+      <main className="flex-grow relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/10 backdrop-blur-md dark:bg-gray-800/10 border border-white/10 dark:border-gray-700/10 p-6 sm:p-8 rounded-xl shadow-lg"
+          >
+            <h2 className="text-3xl font-bold mb-6 text-white">
+              Dashboard
+            </h2>
+            
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-6 p-4 bg-red-500/10 backdrop-blur-md text-red-200 rounded-lg border border-red-500/20"
+              >
+                {error}
+              </motion.div>
+            )}
+
+            <ImageGenerationForm 
+              prompt={prompt}
+              setPrompt={setPrompt}
+              credits={credits}
+              generating={generating}
+              generatedImage={generatedImage}
+              generationError={generationError}
+              handleGenerateImage={handleGenerateImage}
+            />
+
+            <StatsGrid 
+              loading={loading}
+              credits={credits}
+              generatedImages={generatedImages}
+              openPaymentModal={() => setIsPaymentModalOpen(true)}
+            />
+          </motion.div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Modals */}
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        onSuccess={(newCredits) => {
-          handleCreditUpdate(newCredits);
-          setIsPaymentModalOpen(false);
-        }}
+        onSuccess={handleCreditUpdate}
       />
     </div>
   );

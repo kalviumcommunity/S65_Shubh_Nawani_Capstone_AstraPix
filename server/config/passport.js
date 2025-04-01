@@ -1,6 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('../models/userModel');
+const { handleGoogleAuth } = require('../services/authService');
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -26,19 +26,7 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         console.log('Google profile:', profile);
-        
-        let user = await User.findOne({ email: profile.emails[0].value });
-
-        if (!user) {
-          user = await User.create({
-            email: profile.emails[0].value,
-            name: profile.displayName,
-            provider: 'google',
-            providerId: profile.id,
-            credits: 10
-          });
-        }
-
+        const user = await handleGoogleAuth(profile);
         return done(null, user);
       } catch (error) {
         console.error('Google Strategy Error:', error);

@@ -1,31 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Sun, Moon, Loader2, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 import BackgroundImage from '../assets/bg.jpg';
-import Logo from '../assets/logo.jpg';
-import GoogleIcon from '../assets/google.png';
+import Logo from './common/Logo';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import AuthForm from './AuthForm';
+import OTPVerificationForm from './OTPVerificationForm';
+
+// Simplified animation variants
+const pageTransition = {
+  type: "tween",
+  duration: 0.3
+};
+
+const floatingAnimation = {
+  y: [0, -5, 0],
+  transition: {
+    duration: 1.5,
+    repeat: Infinity,
+    ease: "easeInOut"
+  }
+};
 
 const AuthPage = () => {
   const { login } = useAuth();
-  const { darkMode, toggleTheme } = useTheme();
+  const { darkMode, toggleTheme } = useContext(ThemeContext);
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOTPInput, setShowOTPInput] = useState(false);
+  const [otp, setOtp] = useState('');
   const navigate = useNavigate();
 
   const handleToggle = () => {
     setIsLogin(!isLogin);
     setError(null);
+    setFormData({ email: '', password: '' });
+    setShowOTPInput(false);
+    setOtp('');
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null);
   };
 
   const handleGoogleLogin = () => {
@@ -34,163 +58,209 @@ const AuthPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     setError(null);
+
     try {
-      const url = `http://localhost:8000/api/${isLogin ? 'login' : 'signup'}`;
-      const response = await axios.post(url, formData);
+      if (!isLogin) {
+        const response = await axios.post('http://localhost:8000/api/verify/send-otp', {
+          email: formData.email
+        });
+        setShowOTPInput(true);
+        toast.success('OTP sent to your email!');
+      } else {
+        const response = await axios.post('http://localhost:8000/api/login', formData);
+        login(response.data.token, response.data.user);
+        toast.success('Welcome back!');
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Something went wrong');
+      toast.error(err.response?.data?.message || 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      await axios.post('http://localhost:8000/api/verify/verify-otp', {
+        email: formData.email,
+        otp
+      });
+
+      const response = await axios.post('http://localhost:8000/api/signup', formData);
       login(response.data.token, response.data.user);
+      toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong');
+      toast.error(err.response?.data?.message || 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resendOTP = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
+    try {
+      await axios.post('http://localhost:8000/api/verify/send-otp', {
+        email: formData.email
+      });
+      toast.success('New OTP sent!');
+    } catch (err) {
+      toast.error('Failed to send OTP');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className={`min-h-screen relative flex items-center justify-center ${darkMode ? 'dark' : ''}`}>
-      <div 
-        className="absolute inset-0 bg-cover bg-center filter brightness-50" 
-        style={{ 
-          backgroundImage: `url(${BackgroundImage})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          zIndex: -1 
-        }}
-      />
+    <div className={`min-h-screen relative overflow-hidden ${darkMode ? 'dark' : ''}`}>
+      {/* Background with simplified elements */}
+      <div className="fixed inset-0 z-0">
+        <img 
+          src={BackgroundImage} 
+          alt="Background" 
+          className="w-full h-full object-cover opacity-50"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-indigo-600/50 backdrop-blur-sm" />
+      </div>
 
-      <button
+      {/* Theme Toggle */}
+      <motion.button
         onClick={toggleTheme}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors z-50"
-        aria-label="Toggle theme"
+        className="fixed top-4 right-4 md:top-6 md:right-6 z-50 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         {darkMode ? 
-          <Sun className="text-yellow-500 h-5 w-5" /> : 
-          <Moon className="text-gray-600 h-5 w-5" />
+          <Sun className="text-white h-4 w-4 md:h-5 md:w-5" /> : 
+          <Moon className="text-white h-4 w-4 md:h-5 md:w-5" />
         }
-      </button>
+      </motion.button>
 
-      <motion.div 
-        className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden relative z-10 mx-4"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, type: 'spring', stiffness: 50 }}
-      >
-        <div className="p-8">
-          <div className="flex justify-center mb-6">
-            <div className={`p-2 rounded-full ${darkMode ? 'bg-white' : 'bg-transparent'}`}>
-              <img src={Logo} alt="AstraPix Logo" className="h-16 w-auto" />
-            </div>
-          </div>
-
-          <motion.div 
-            className="flex justify-between items-center mb-6"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
-              {isLogin ? 'Login' : 'Signup'}
-            </h2>
-            <motion.button 
-              onClick={handleToggle}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
-            >
-              {isLogin ? 'Create account' : 'Back to login'}
-            </motion.button>
-          </motion.div>
-
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <AnimatePresence mode="wait">
-            <motion.form 
-              key={isLogin ? 'login' : 'signup'}
-              onSubmit={handleSubmit}
-              initial={{ opacity: 0, x: isLogin ? -50 : 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-gray-700 dark:text-gray-200 mb-2">Email</label>
-                <input 
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg bg-white/70 dark:bg-gray-700/70 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-800 transition duration-300"
-                  required
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-gray-700 dark:text-gray-200 mb-2">Password</label>
-                <div className="relative">
-                  <input 
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg bg-white/70 dark:bg-gray-700/70 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-800 transition duration-300 pr-12"
-                    required
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-300 transition"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition duration-300 ease-in-out transform"
-              >
-                {isLogin ? 'Login' : 'Create Account'}
-              </motion.button>
-
-              {/* Google OAuth Button */}
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                      Or continue with
-                    </span>
-                  </div>
-                </div>
-
-                <motion.button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="mt-6 w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-300"
+      {/* Main Container */}
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={pageTransition}
+          className="w-full max-w-md md:max-w-6xl grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {isLogin ? (
+              <>
+                {/* Welcome Panel */}
+                <motion.div
+                  key="welcome"
+                  initial={{ x: -50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 50, opacity: 0 }}
+                  transition={pageTransition}
+                  className="p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
                 >
-                  <img 
-                    src={GoogleIcon} 
-                    alt="Google" 
-                    className="h-5 w-5"
+                  <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
+                  <div className="space-y-4 md:space-y-6">
+                    <h1 className="text-2xl md:text-4xl font-bold text-white">
+                      Welcome Back!
+                    </h1>
+                    <p className="text-white/80 text-sm md:text-lg max-w-sm">
+                      Sign in to continue your creative journey with AstraPix.
+                    </p>
+                    <motion.button
+                      onClick={handleToggle}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-6 py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all"
+                    >
+                      Create Account
+                    </motion.button>
+                  </div>
+                </motion.div>
+
+                {/* Login Form */}
+                <AuthForm 
+                  isLogin={true}
+                  formData={formData}
+                  handleChange={handleChange}
+                  handleSubmit={handleSubmit}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                  isSubmitting={isSubmitting}
+                  error={error}
+                  handleGoogleLogin={handleGoogleLogin}
+                />
+              </>
+            ) : (
+              <>
+                {/* Register Form */}
+                {showOTPInput ? (
+                  <OTPVerificationForm 
+                    email={formData.email}
+                    otp={otp}
+                    setOtp={setOtp}
+                    isSubmitting={isSubmitting}
+                    error={error}
+                    handleVerifyOTP={handleVerifyOTP}
+                    resendOTP={resendOTP}
                   />
-                  <span className="text-gray-700 dark:text-gray-200 font-medium">
-                    Continue with Google
-                  </span>
-                </motion.button>
-              </div>
-            </motion.form>
+                ) : (
+                  <AuthForm 
+                    isLogin={false}
+                    formData={formData}
+                    handleChange={handleChange}
+                    handleSubmit={handleSubmit}
+                    showPassword={showPassword}
+                    setShowPassword={setShowPassword}
+                    isSubmitting={isSubmitting}
+                    error={error}
+                    handleGoogleLogin={handleGoogleLogin}
+                  />
+                )}
+
+                {/* Welcome Register Panel */}
+                <motion.div
+                  key="welcome-register"
+                  initial={{ x: 50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -50, opacity: 0 }}
+                  transition={pageTransition}
+                  className="p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
+                >
+                  <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
+                  <div className="space-y-4 md:space-y-6">
+                    <h1 className="text-2xl md:text-4xl font-bold text-white">
+                      Start Your Journey
+                    </h1>
+                    <p className="text-white/80 text-sm md:text-lg max-w-sm">
+                      Already have an account? Sign in to continue your journey.
+                    </p>
+                    <motion.button
+                      onClick={handleToggle}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-6 py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all"
+                    >
+                      Sign In
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </>
+            )}
           </AnimatePresence>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 };

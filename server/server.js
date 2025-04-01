@@ -6,6 +6,7 @@ const passport = require('passport');
 const connectDB = require('./config/db');
 const paymentRoute = require('./routes/paymentRoute');
 const authRoute = require('./routes/authRoute');
+const emailVerificationRoute = require('./routes/emailVerificationRoute');
 const userRoute = require('./routes/userRoute');
 const creditRoute = require('./routes/creditRoute');
 const imageRoute = require('./routes/imageRoute');
@@ -26,7 +27,7 @@ app.use(express.json());
 app.use(passport.initialize());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
-
+app.use('/api/verify', emailVerificationRoute);
 app.use('/auth', authRoute);
 app.use('/api', userRoute);
 app.use('/check', creditRoute);

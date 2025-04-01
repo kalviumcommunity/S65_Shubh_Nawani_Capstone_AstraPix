@@ -8,7 +8,20 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      backdropFilter: {
+        'none': 'none',
+        'blur': 'blur(4px)',
+        'blur-md': 'blur(12px)',
+      },
       colors: {
+        dark: {
+          input: '#1f2937',
+          text: '#f3f4f6',
+        },
+        light: {
+          input: '#ffffff',
+          text: '#111827',
+        },
         primary: {
           50: '#f5f3ff',
           100: '#ede9fe',

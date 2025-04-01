@@ -14,16 +14,24 @@ router.get('/google',
 router.get('/google/callback',
     passport.authenticate('google', { 
       session: false,
-      prompt: 'select_account consent' // Add here as well
+      prompt: 'select_account consent'
     }),
     (req, res) => {
       try {
+        // Log user data for debugging
+        console.log('User after Google auth:', {
+          id: req.user._id,
+          email: req.user.email,
+          avatar: req.user.avatar
+        });
+
         const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET);
         const userData = {
           _id: req.user._id,
           email: req.user.email,
           name: req.user.name,
-          credits: req.user.credits
+          credits: req.user.credits,
+          avatar: req.user.avatar // Add avatar to userData
         };
         
         // Include user data in the redirect URL
