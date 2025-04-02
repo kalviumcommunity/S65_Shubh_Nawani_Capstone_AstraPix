@@ -18,27 +18,26 @@ router.get('/google/callback',
     }),
     (req, res) => {
       try {
-        // Log user data for debugging
-        console.log('User after Google auth:', {
-          id: req.user._id,
-          email: req.user.email,
-          avatar: req.user.avatar
-        });
-
         const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET);
         const userData = {
           _id: req.user._id,
           email: req.user.email,
           name: req.user.name,
           credits: req.user.credits,
-          avatar: req.user.avatar // Add avatar to userData
+          avatar: req.user.avatar
         };
         
-        // Include user data in the redirect URL
         const userDataParam = encodeURIComponent(JSON.stringify(userData));
+        
+        // Add SameSite and Secure attributes to cookies
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'Lax'
+        });
+
         res.redirect(`${process.env.CLIENT_URL}/oauth-callback?token=${token}&user=${userDataParam}`);
       } catch (error) {
-        console.error('OAuth Callback Error:', error);
         res.redirect(`${process.env.CLIENT_URL}/auth?error=Authentication failed`);
       }
     }

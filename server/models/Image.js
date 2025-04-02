@@ -6,22 +6,18 @@ const imageSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    prompt: {
-        type: String,
-        required: true
-    },
     imageUrl: {
         type: String,
         required: true
     },
-    cloudinaryId: {
+    prompt: {
         type: String,
         required: true
     },
-    timestamp: {
+    generatedAt: {
         type: Date,
         default: Date.now
     }
-});
+}, { timestamps: true }); // This adds createdAt and updatedAt automatically
 
 module.exports = mongoose.model('Image', imageSchema);

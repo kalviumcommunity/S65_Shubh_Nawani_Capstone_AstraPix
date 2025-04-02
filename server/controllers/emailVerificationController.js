@@ -6,9 +6,7 @@ const crypto = require('crypto');
 const otpStore = new Map();
 
 // Generate secure OTP
-const generateOTP = () => {
-  return crypto.randomInt(100000, 999999).toString();
-};
+const generateOTP = () => crypto.randomInt(100000, 999999).toString();
 
 // Configure nodemailer with Gmail
 const transporter = nodemailer.createTransport({
@@ -41,28 +39,23 @@ testEmailConfig();
 
 const sendVerificationEmail = async (email, otp) => {
   try {
-    console.log('Attempting to send email to:', email);
-    
     const mailOptions = {
       from: `"AstraPix" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Verify your AstraPix account',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #6b46c1;">Welcome to AstraPix!</h2>
           <p>Your verification code is:</p>
-          <h1 style="color: #4c1d95; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
-          <p>This code will expire in 10 minutes.</p>
-          <p style="color: #666; font-size: 12px;">If you didn't request this code, please ignore this email.</p>
+          <h1 style="color: #4c1d95; letter-spacing: 5px;">${otp}</h1>
+          <p>Code expires in 10 minutes.</p>
         </div>
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
+    await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('Email sending failed:', error);
     throw error;
   }
 };

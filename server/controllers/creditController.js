@@ -1,28 +1,19 @@
-const Credit = require('../models/creditModel')
-const User = require('../models/userModel')
+const Credit = require('../models/creditModel');
+const User = require('../models/userModel');
 
 const getCredit = async (req, res) => {
-    try {
-        const {email} = req.params
+  try {
+    const user = await User.findOne({email: req.params.email});
+    if (!user) return res.status(400).json({message: "User not found!"});
+    
+    const userCredit = await Credit.findOne({ user: user._id });
+    if (!userCredit) return res.status(400).json({ message: "No credits found!" });
 
-        const user = await User.findOne({email})
-
-        if (!user) {
-            return res.status(400).json({message: "User not found!"})
-        }
-        
-        const userCredit = await Credit.findOne({ user: user._id })
-        
-        if (!userCredit) {
-            return res.status(400).json({ message: "No credits found, please purchase some!" })
-        }
-
-        return res.status(200).json({ credit: userCredit.credit, user: userCredit.user })
-
-    } catch (err) {
-        return res.status(500).json({error: err.message})
-    }
-}
+    return res.status(200).json({ credit: userCredit.credit, user: userCredit.user });
+  } catch (err) {
+    return res.status(500).json({error: 'Error checking credits'});
+  }
+};
 
 const addCredit = async (req, res) => {
     try {

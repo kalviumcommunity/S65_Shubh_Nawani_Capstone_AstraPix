@@ -10,23 +10,15 @@ const OAuthCallback = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Get token from URL parameters
         const params = new URLSearchParams(location.search);
         const token = params.get('token');
-
-        if (!token) {
-          throw new Error('No token received');
-        }
-
-        // Store token and redirect to dashboard
+        if (!token) throw new Error('No token received');
         await login(token);
         navigate('/dashboard');
       } catch (error) {
-        console.error('OAuth callback error:', error);
         navigate('/auth');
       }
     };
-
     handleCallback();
   }, [location, login, navigate]);
 

@@ -12,11 +12,6 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
   const { letter, bgColor } = getInitialAvatar(user?.email);
   const username = user?.email ? user.email.split('@')[0] : 'User';
 
-  // Debug user data
-  useEffect(() => {
-    console.log('User data in Navbar:', user);
-  }, [user]);
-
   const handleLogoutClick = () => {
     Swal.fire({
       title: 'Are you sure?',
@@ -179,7 +174,6 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
                     alt={username}
                     className="w-7 h-7 rounded-full ring-2 ring-white/20"
                     onError={(e) => {
-                      console.error('Avatar failed to load:', e);
                       e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
                     }}
                   />

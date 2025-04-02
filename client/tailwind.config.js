@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -8,10 +7,8 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
-      backdropFilter: {
-        'none': 'none',
-        'blur': 'blur(4px)',
-        'blur-md': 'blur(12px)',
+      transitionDuration: {
+        DEFAULT: '200ms'
       },
       colors: {
         dark: {
@@ -34,7 +31,20 @@ export default {
           800: '#5b21b6',
           900: '#4c1d95',
         }
-      }
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'grid-pattern': 'linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px)',
+      },
+      backgroundSize: {
+        'grid': '50px 50px',
+      },
+    },
+  },
+  variants: {
+    extend: {
+      backgroundColor: ['hover'],
+      opacity: ['hover', 'group-hover'],
     },
   },
   plugins: [

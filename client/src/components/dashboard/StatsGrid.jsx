@@ -64,7 +64,15 @@ const StatsGrid = ({ loading, credits, generatedImages, openPaymentModal }) => {
         <div className="space-y-2">
           {generatedImages.slice(-3).map((img, index) => (
             <p key={index} className="text-sm text-white/80">
-              Generated: {new Date(img.timestamp).toLocaleDateString()}
+              Generated: {img.timestamp 
+                ? new Date(img.timestamp).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })
+                : 'Date not available'}
             </p>
           ))}
           {generatedImages.length === 0 && (

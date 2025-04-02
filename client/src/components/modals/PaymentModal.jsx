@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
-    const [selectedPlan, setSelectedPlan] =
-     useState(null);
     const [loading, setLoading] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(null);
 
     const plans = [
-        { credits: 10, amount: 99900 },  // ₹999
-        { credits: 25, amount: 199900 }, // ₹1,999
-        { credits: 50, amount: 299900 }  // ₹2,999
+        { credits: 10, amount: 99900 },
+        { credits: 25, amount: 199900 },
+        { credits: 50, amount: 299900 }
     ];
 
     const handlePayment = async (plan) => {
+        if (loading) return;
+        setLoading(true);
+        setSelectedPlan(plan);
+        
         try {
-            setLoading(true);
             const { data } = await axios.post('http://localhost:8000/api/payment/create-order', {
                 amount: plan.amount,
                 credits: plan.credits
@@ -37,23 +40,21 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                         });
                         onSuccess(verifyData.data.credits);
                         onClose();
+                        toast.success('Payment successful!');
                     } catch (error) {
-                        console.error('Payment verification failed:', error);
-                        alert('Payment verification failed');
+                        toast.error('Payment verification failed');
                     }
                 },
-                theme: {
-                    color: '#7C3AED'
-                }
+                theme: { color: '#7C3AED' }
             };
 
             const razorpay = new window.Razorpay(options);
             razorpay.open();
         } catch (error) {
-            console.error('Payment initiation failed:', error);
-            alert('Failed to initiate payment');
+            toast.error('Failed to initiate payment');
         } finally {
             setLoading(false);
+            setSelectedPlan(null);
         }
     };
 

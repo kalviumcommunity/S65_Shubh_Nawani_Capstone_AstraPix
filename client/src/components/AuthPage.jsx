@@ -14,16 +14,7 @@ import OTPVerificationForm from './OTPVerificationForm';
 // Simplified animation variants
 const pageTransition = {
   type: "tween",
-  duration: 0.3
-};
-
-const floatingAnimation = {
-  y: [0, -5, 0],
-  transition: {
-    duration: 1.5,
-    repeat: Infinity,
-    ease: "easeInOut"
-  }
+  duration: 0.15 // Reduced from 0.2
 };
 
 const AuthPage = () => {
@@ -127,28 +118,28 @@ const AuthPage = () => {
 
   return (
     <div className={`min-h-screen relative overflow-hidden ${darkMode ? 'dark' : ''}`}>
-      {/* Background with simplified elements */}
+      {/* Background with lazy loading */}
       <div className="fixed inset-0 z-0">
         <img 
           src={BackgroundImage} 
           alt="Background" 
           className="w-full h-full object-cover opacity-50"
+          loading="lazy"
+          fetchpriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-indigo-600/50 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-indigo-600/50" />
       </div>
 
       {/* Theme Toggle */}
-      <motion.button
+      <button
         onClick={toggleTheme}
-        className="fixed top-4 right-4 md:top-6 md:right-6 z-50 p-2 md:p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        className="fixed top-4 right-4 md:top-6 md:right-6 z-50 p-2 md:p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
       >
         {darkMode ? 
           <Sun className="text-white h-4 w-4 md:h-5 md:w-5" /> : 
           <Moon className="text-white h-4 w-4 md:h-5 md:w-5" />
         }
-      </motion.button>
+      </button>
 
       {/* Main Container */}
       <div className="relative min-h-screen flex items-center justify-center p-4">

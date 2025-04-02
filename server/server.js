@@ -48,8 +48,9 @@ app.get("/", (req, res) => {
 app.listen(PORT, async () => {
   try {
     await connectDB();
-    console.log(`Server is listening on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   } catch (err) {
-    console.error(err.message);
+    console.error('Server startup error:', err.message);
+    process.exit(1);
   }
 });

@@ -21,7 +21,6 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          // Updated endpoint to match backend route
           const response = await axios.get('http://localhost:8000/api/profile', {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(true);
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } catch (error) {
-          console.error('Auth check failed:', error);
           localStorage.removeItem('token');
           delete axios.defaults.headers.common['Authorization'];
         }
@@ -45,7 +43,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       
       if (!userData) {
-        // Updated endpoint to match backend route
         const response = await axios.get('http://localhost:8000/api/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -58,7 +55,6 @@ export const AuthProvider = ({ children }) => {
       
       return userData;
     } catch (error) {
-      console.error('Login failed:', error);
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
       throw error;
