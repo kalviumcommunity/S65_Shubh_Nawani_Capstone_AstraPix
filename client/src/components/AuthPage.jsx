@@ -10,6 +10,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import AuthForm from './AuthForm';
 import OTPVerificationForm from './OTPVerificationForm';
+import ForgotPasswordForm from './ForgotPasswordForm.jsx';
 
 // Simplified animation variants
 const pageTransition = {
@@ -27,6 +28,7 @@ const AuthPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOTPInput, setShowOTPInput] = useState(false);
   const [otp, setOtp] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleToggle = () => {
@@ -56,7 +58,7 @@ const AuthPage = () => {
 
     try {
       if (!isLogin) {
-        const response = await axios.post('http://localhost:8000/api/verify/send-otp', {
+        const response = await axios.post('http://localhost:8000/api/send-otp', {
           email: formData.email
         });
         setShowOTPInput(true);
@@ -83,7 +85,7 @@ const AuthPage = () => {
     setError(null);
 
     try {
-      await axios.post('http://localhost:8000/api/verify/verify-otp', {
+      await axios.post('http://localhost:8000/api/verify-otp', {
         email: formData.email,
         otp
       });
@@ -105,7 +107,7 @@ const AuthPage = () => {
     setIsSubmitting(true);
     
     try {
-      await axios.post('http://localhost:8000/api/verify/send-otp', {
+      await axios.post('http://localhost:8000/api/send-otp', {
         email: formData.email
       });
       toast.success('New OTP sent!');
@@ -114,6 +116,10 @@ const AuthPage = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    setShowForgotPassword(true);
   };
 
   return (
@@ -150,104 +156,111 @@ const AuthPage = () => {
           className="w-full max-w-md md:max-w-6xl grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl"
         >
           <AnimatePresence mode="wait" initial={false}>
-            {isLogin ? (
+            {!showForgotPassword ? (
               <>
-                {/* Welcome Panel */}
-                <motion.div
-                  key="welcome"
-                  initial={{ x: -50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 50, opacity: 0 }}
-                  transition={pageTransition}
-                  className="p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
-                >
-                  <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
-                  <div className="space-y-4 md:space-y-6">
-                    <h1 className="text-2xl md:text-4xl font-bold text-white">
-                      Welcome Back!
-                    </h1>
-                    <p className="text-white/80 text-sm md:text-lg max-w-sm">
-                      Sign in to continue your creative journey with AstraPix.
-                    </p>
-                    <motion.button
-                      onClick={handleToggle}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-6 py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all"
+                {isLogin ? (
+                  <>
+                    {/* Welcome Panel */}
+                    <motion.div
+                      key="welcome"
+                      initial={{ x: -50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 50, opacity: 0 }}
+                      transition={pageTransition}
+                      className="p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
                     >
-                      Create Account
-                    </motion.button>
-                  </div>
-                </motion.div>
+                      <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
+                      <div className="space-y-4 md:space-y-6">
+                        <h1 className="text-2xl md:text-4xl font-bold text-white">
+                          Welcome Back!
+                        </h1>
+                        <p className="text-white/80 text-sm md:text-lg max-w-sm">
+                          Sign in to continue your creative journey with AstraPix.
+                        </p>
+                        <motion.button
+                          onClick={handleToggle}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="px-6 py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all"
+                        >
+                          Create Account
+                        </motion.button>
+                      </div>
+                    </motion.div>
 
-                {/* Login Form */}
-                <AuthForm 
-                  isLogin={true}
-                  formData={formData}
-                  handleChange={handleChange}
-                  handleSubmit={handleSubmit}
-                  showPassword={showPassword}
-                  setShowPassword={setShowPassword}
-                  isSubmitting={isSubmitting}
-                  error={error}
-                  handleGoogleLogin={handleGoogleLogin}
-                />
+                    {/* Login Form */}
+                    <AuthForm 
+                      isLogin={true}
+                      formData={formData}
+                      handleChange={handleChange}
+                      handleSubmit={handleSubmit}
+                      showPassword={showPassword}
+                      setShowPassword={setShowPassword}
+                      isSubmitting={isSubmitting}
+                      error={error}
+                      handleGoogleLogin={handleGoogleLogin}
+                      onForgotPassword={handleForgotPassword}  // Add this prop
+                    />
+                  </>
+                ) : (
+                  <>
+                    {/* Register Form */}
+                    {showOTPInput ? (
+                      <OTPVerificationForm 
+                        email={formData.email}
+                        otp={otp}
+                        setOtp={setOtp}
+                        isSubmitting={isSubmitting}
+                        error={error}
+                        handleVerifyOTP={handleVerifyOTP}
+                        resendOTP={resendOTP}
+                      />
+                    ) : (
+                      <AuthForm 
+                        isLogin={false}
+                        formData={formData}
+                        handleChange={handleChange}
+                        handleSubmit={handleSubmit}
+                        showPassword={showPassword}
+                        setShowPassword={setShowPassword}
+                        isSubmitting={isSubmitting}
+                        error={error}
+                        handleGoogleLogin={handleGoogleLogin}
+                      />
+                    )}
+
+                    {/* Welcome Register Panel */}
+                    <motion.div
+                      key="welcome-register"
+                      initial={{ x: 50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -50, opacity: 0 }}
+                      transition={pageTransition}
+                      className="p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
+                    >
+                      <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
+                      <div className="space-y-4 md:space-y-6">
+                        <h1 className="text-2xl md:text-4xl font-bold text-white">
+                          Start Your Journey
+                        </h1>
+                        <p className="text-white/80 text-sm md:text-lg max-w-sm">
+                          Already have an account? Sign in to continue your journey.
+                        </p>
+                        <motion.button
+                          onClick={handleToggle}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="px-6 py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all"
+                        >
+                          Sign In
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
               </>
             ) : (
-              <>
-                {/* Register Form */}
-                {showOTPInput ? (
-                  <OTPVerificationForm 
-                    email={formData.email}
-                    otp={otp}
-                    setOtp={setOtp}
-                    isSubmitting={isSubmitting}
-                    error={error}
-                    handleVerifyOTP={handleVerifyOTP}
-                    resendOTP={resendOTP}
-                  />
-                ) : (
-                  <AuthForm 
-                    isLogin={false}
-                    formData={formData}
-                    handleChange={handleChange}
-                    handleSubmit={handleSubmit}
-                    showPassword={showPassword}
-                    setShowPassword={setShowPassword}
-                    isSubmitting={isSubmitting}
-                    error={error}
-                    handleGoogleLogin={handleGoogleLogin}
-                  />
-                )}
-
-                {/* Welcome Register Panel */}
-                <motion.div
-                  key="welcome-register"
-                  initial={{ x: 50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -50, opacity: 0 }}
-                  transition={pageTransition}
-                  className="p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
-                >
-                  <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
-                  <div className="space-y-4 md:space-y-6">
-                    <h1 className="text-2xl md:text-4xl font-bold text-white">
-                      Start Your Journey
-                    </h1>
-                    <p className="text-white/80 text-sm md:text-lg max-w-sm">
-                      Already have an account? Sign in to continue your journey.
-                    </p>
-                    <motion.button
-                      onClick={handleToggle}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-6 py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all"
-                    >
-                      Sign In
-                    </motion.button>
-                  </div>
-                </motion.div>
-              </>
+              <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
             )}
           </AnimatePresence>
         </motion.div>

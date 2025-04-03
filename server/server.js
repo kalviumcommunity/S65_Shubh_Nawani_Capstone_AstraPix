@@ -19,8 +19,9 @@ require('./config/passport');
 const app = express();
 
 app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
 app.use(express.json());
@@ -29,7 +30,7 @@ app.use(passport.initialize());
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/verify', emailVerificationRoute);
 app.use('/auth', authRoute);
-app.use('/api', userRoute);
+app.use('/api', userRoute); // This will handle forgot password routes
 app.use('/check', creditRoute);
 app.use('/generate', imageRoute);
 app.use('/api', profileRoute);

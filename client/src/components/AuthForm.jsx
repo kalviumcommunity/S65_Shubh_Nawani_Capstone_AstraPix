@@ -12,7 +12,8 @@ const AuthForm = ({
   setShowPassword,
   isSubmitting,
   error,
-  handleGoogleLogin
+  handleGoogleLogin,
+  onForgotPassword  // Add this prop
 }) => {
   return (
     <motion.div
@@ -55,6 +56,17 @@ const AuthForm = ({
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
+        {isLogin && (
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-white/70 hover:text-white text-sm transition-colors"
+            >
+              Forgot Password?
+            </button>
+          </div>
+        )}
         {error && <p className="text-red-400 text-sm">{error}</p>}
         <button
           type="submit"
