@@ -37,6 +37,7 @@ const Dashboard = () => {
   const [userImages, setUserImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [recentImages, setRecentImages] = useState([]);
 
   // Memoized API headers
   const authHeaders = useMemo(() => ({
@@ -87,6 +88,21 @@ const Dashboard = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const fetchRecentImages = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/generate/gallery', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setRecentImages((response.data.images || []).slice(0, 3));
+      } catch (error) {
+        console.error('Failed to fetch recent images');
+      }
+    };
+
+    fetchRecentImages();
+  }, []);
+
   // Handlers
   const handleCreditUpdate = (newCredits) => {
     setCredits(newCredits);
@@ -100,13 +116,29 @@ const Dashboard = () => {
 
   const handleDeleteImage = async (imageId) => {
     try {
-      await axios.delete(`http://localhost:8000/generate/${imageId}`, {
+      const response = await axios.delete(`http://localhost:8000/generate/${imageId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      setUserImages(images => images.filter(img => img._id !== imageId));
-      toast.success('Image deleted successfully');
+
+      if (response.data.success) {
+        setUserImages(images => images.filter(img => img._id !== imageId));
+        toast.success('Image deleted successfully', {
+          duration: 3000,
+          style: {
+            background: '#10B981',
+            color: '#fff',
+          },
+          icon: '🗑️'
+        });
+      }
     } catch (error) {
-      toast.error('Failed to delete image');
+      toast.error('Failed to delete image', {
+        duration: 3000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      });
     }
   };
 
@@ -184,7 +216,7 @@ const Dashboard = () => {
   ), [userImages, loadingImages]);
 
   // Get only recent images with reduced quality
-  const recentImages = useMemo(() => 
+  const recentImagesMemo = useMemo(() => 
     userImages.slice(0, 3).map(img => ({
         ...img,
         imageUrl: img.imageUrl.replace('/upload/', '/upload/w_400,q_auto:low/'),
@@ -251,7 +283,7 @@ const Dashboard = () => {
                 <StatsGrid 
                   loading={loading}
                   credits={credits}
-                  generatedImages={recentImages}
+                  generatedImages={userImages} // Pass full userImages array instead of just recent ones
                   openPaymentModal={() => setIsPaymentModalOpen(true)}
                 />
               </Suspense>
@@ -259,23 +291,23 @@ const Dashboard = () => {
 
             <div className="bg-black/10 border border-white/10 p-6 sm:p-8 rounded-xl">
               {/* Gallery section with recent images */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold text-white">Recent Creations</h2>
+                <button
+                  onClick={() => navigate('/gallery')}
+                  className="text-purple-400 hover:text-purple-300"
+                >
+                  View All →
+                </button>
+              </div>
               <Suspense fallback={<div className="h-96 animate-pulse bg-white/5 rounded-lg" />}>
-                <div className="bg-white/5 border border-white/10 p-6 sm:p-8 rounded-xl shadow-lg">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-3xl font-bold text-white">Recent Creations</h2>
-                    <button
-                      onClick={() => navigate('/gallery')}
-                      className="text-purple-400 hover:text-purple-300"
-                    >
-                      View All →
-                    </button>
-                  </div>
-                  <Gallery 
-                    images={recentImages}
-                    loading={loadingImages}
-                    onDelete={handleDeleteImage}
-                  />
-                </div>
+                <Gallery 
+                  images={recentImagesMemo.slice(0, 3)}
+                  loading={loadingImages}
+                  onDelete={handleDeleteImage}
+                  showHeaderFooter={false}
+                  isMinimal={true}
+                />
               </Suspense>
             </div>
           </div>

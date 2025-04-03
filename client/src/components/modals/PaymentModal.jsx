@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { X } from 'lucide-react';
 
 const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
@@ -66,15 +67,26 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                onClick={onClose} // Close on backdrop click
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             >
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    onClick={e => e.stopPropagation()} // Prevent closing when clicking modal content
+                    className="relative bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 max-w-md w-full mx-4 border border-white/10 shadow-xl"
                 >
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
+                    {/* Close button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute right-4 top-4 p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                        aria-label="Close modal"
+                    >
+                        <X size={20} />
+                    </button>
+
+                    <h2 className="text-2xl font-bold mb-6 text-white">
                         Purchase Credits
                     </h2>
                     
@@ -86,17 +98,22 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => handlePayment(plan)}
                                 disabled={loading}
-                                className={`w-full p-4 rounded-lg border-2 ${
+                                className={`w-full p-4 rounded-lg border ${
                                     selectedPlan === plan
-                                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900'
-                                        : 'border-gray-200 dark:border-gray-700'
-                                } hover:border-purple-600 transition-all`}
+                                        ? 'border-purple-500 bg-purple-500/20'
+                                        : 'border-white/10 hover:border-purple-500/50'
+                                } transition-all group`}
                             >
                                 <div className="flex justify-between items-center">
-                                    <span className="text-lg font-semibold text-gray-800 dark:text-white">
-                                        {plan.credits} Credits
-                                    </span>
-                                    <span className="text-purple-600 dark:text-purple-400">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-lg font-semibold text-white group-hover:text-purple-400">
+                                            {plan.credits} Credits
+                                        </span>
+                                        <span className="text-sm text-white/60">
+                                            Best for {plan.credits < 25 ? 'starters' : plan.credits < 50 ? 'regular users' : 'power users'}
+                                        </span>
+                                    </div>
+                                    <span className="text-xl font-bold text-purple-400">
                                         ₹{(plan.amount / 100).toLocaleString()}
                                     </span>
                                 </div>
@@ -104,14 +121,9 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                         ))}
                     </div>
 
-                    <div className="mt-6 flex justify-end">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                        >
-                            Close
-                        </button>
-                    </div>
+                    <p className="mt-6 text-center text-white/60 text-sm">
+                        Secure payments powered by Razorpay
+                    </p>
                 </motion.div>
             </motion.div>
         </AnimatePresence>
