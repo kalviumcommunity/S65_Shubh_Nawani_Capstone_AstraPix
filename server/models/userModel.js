@@ -22,6 +22,12 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['local', 'google'],
         default: 'local'
+      },
+      username: {
+        type: String,
+        default: function() {
+          return this.email ? this.email.split('@')[0] : 'User';
+        }
       }
 }, {timestamps: true})
 

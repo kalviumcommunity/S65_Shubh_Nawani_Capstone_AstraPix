@@ -4,26 +4,27 @@ import Swal from 'sweetalert2';
 import Logo from './Logo';
 import { getInitialAvatar } from '../../utils/avatarUtils';
 import qrCode from '../../assets/AstraPix_QR.jpg'; // Add this import
+import toast from 'react-hot-toast'; // Add this import
+import axios from 'axios';  // Add this import at the top
 
 const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, openPaymentModal }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const { letter, bgColor } = getInitialAvatar(user?.email);
-  const username = user?.email ? user.email.split('@')[0] : 'User';
+  const [currentUsername, setCurrentUsername] = useState(user?.username || 'User');
 
   const handleLogoutClick = () => {
     Swal.fire({
       title: 'Are you sure?',
-      text: 'You will be logged out of your account',
+      text: "You will be logged out of your account",
       icon: 'warning',
+      background: '#1f2937',
+      color: '#fff',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Yes, logout',
-      background: '#1f2937',
-      color: '#fff',
-      toast: false,
       customClass: {
         popup: 'rounded-lg',
         confirmButton: 'px-4 py-2 rounded-md',
@@ -31,16 +32,42 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        handleLogout();
+        toast.success('Successfully logged out!', {
+          duration: 2000,
+          position: 'top-center',
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        
+        setTimeout(() => {
+          handleLogout();
+        }, 1000);
       }
     });
+  };
+
+  const fetchUpdatedUserData = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/users/${user.email}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.data.success) {
+        const updatedUser = response.data.user;
+        localStorage.setItem('userData', JSON.stringify(updatedUser));
+        window.location.reload(); // Force reload to update all components
+      }
+    } catch (error) {
+      console.error('Failed to fetch updated user data:', error);
+    }
   };
 
   const handleEditUsername = () => {
     Swal.fire({
       title: 'Edit Username',
       input: 'text',
-      inputValue: username,
+      inputValue: currentUsername,
       inputAttributes: {
         autocapitalize: 'off',
         maxlength: 20
@@ -57,27 +84,42 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
         cancelButton: 'px-4 py-2 rounded-md'
       },
       inputValidator: (value) => {
-        if (!value) {
-          return 'Username cannot be empty!';
-        }
-        if (value.length < 3) {
-          return 'Username must be at least 3 characters long!';
-        }
+        if (!value) return 'Username cannot be empty!';
+        if (value.length < 3) return 'Username must be at least 3 characters long!';
       }
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        // Here you would typically call an API to update the username
-        // For now, just show a success message
-        Swal.fire({
-          icon: 'success',
-          title: 'Username updated!',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000,
-          background: '#1f2937',
-          color: '#fff'
-        });
+        try {
+          const response = await axios.post('http://localhost:8000/api/update-username', {
+            email: user.email,
+            newUsername: result.value
+          });
+
+          if (response.data.success) {
+            // Update local state immediately
+            setCurrentUsername(result.value);
+            
+            // Update localStorage
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            userData.username = result.value;
+            localStorage.setItem('userData', JSON.stringify(userData));
+
+            toast.success('Username updated successfully!', {
+              duration: 2000,
+              position: 'top-center',
+              style: { background: '#333', color: '#fff' },
+            });
+
+            // Close dropdown
+            setShowDropdown(false);
+          }
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Failed to update username', {
+            duration: 2000,
+            position: 'top-center',
+            style: { background: '#333', color: '#fff' },
+          });
+        }
       }
     });
   };
@@ -171,22 +213,22 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
                 {user?.provider === 'google' && user?.avatar ? (
                   <img 
                     src={user.avatar}
-                    alt={username}
+                    alt={currentUsername}
                     className="w-7 h-7 rounded-full ring-2 ring-white/20"
                     onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUsername)}&background=random`;
                     }}
                   />
                 ) : (
                   <div 
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-medium ${bgColor}`}
-                    title={username}
+                    title={currentUsername}
                   >
                     {letter}
                   </div>
                 )}
                 <span className="text-white/90 text-sm font-medium hidden sm:inline-block">
-                  {username}
+                  {currentUsername}
                 </span>
                 <ChevronDown className="w-4 h-4 text-white/60" />
               </button>

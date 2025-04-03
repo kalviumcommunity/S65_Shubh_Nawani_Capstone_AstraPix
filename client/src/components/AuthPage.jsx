@@ -62,11 +62,25 @@ const AuthPage = () => {
           email: formData.email
         });
         setShowOTPInput(true);
-        toast.success('OTP sent to your email!');
+        toast.success('OTP sent to your email!', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        });
       } else {
         const response = await axios.post('http://localhost:8000/api/login', formData);
         login(response.data.token, response.data.user);
-        toast.success('Welcome back!');
+        toast.success('Welcome back!', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        });
         navigate('/dashboard');
       }
     } catch (err) {

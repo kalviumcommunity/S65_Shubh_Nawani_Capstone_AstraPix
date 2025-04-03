@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast, Toaster } from 'react-hot-toast';
 
 const ForgotPasswordForm = ({ onBack }) => {
   const [email, setEmail] = useState('');
@@ -14,17 +14,25 @@ const ForgotPasswordForm = ({ onBack }) => {
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
     try {
       await axios.post('http://localhost:8000/api/forgot-password', { email });
-      toast.success('Reset code sent to your email', {
-        duration: 4000,
-        icon: '📧'
+      toast.success('OTP sent to your email! Please check your inbox.', {
+        duration: 5000,
+        position: 'top-center',
+        style: {
+          background: '#333',
+          color: '#fff',
+        },
       });
       setStep(2);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send reset code', {
-        duration: 4000
+      toast.error(error.response?.data?.message || 'Failed to send OTP. Please try again.', {
+        duration: 5000,
+        position: 'top-center',
+        style: {
+          background: '#333',
+          color: '#fff',
+        },
       });
     } finally {
       setIsSubmitting(false);
@@ -34,34 +42,29 @@ const ForgotPasswordForm = ({ onBack }) => {
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long');
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
       await axios.post('http://localhost:8000/api/verify-otp', {
         email,
         otp,
         newPassword
       });
-      
-      toast.success('Password updated successfully!', {
-        duration: 4000,
-        icon: '✅'
+      toast.success('Password updated successfully! Redirecting to login...', {
+        duration: 5000,
+        position: 'top-center',
+        style: {
+          background: '#333',
+          color: '#fff',
+        },
       });
-      
-      setTimeout(() => {
-        toast.success('You can now login with your new password', {
-          duration: 3000
-        });
-        onBack();
-      }, 2000);
+      setTimeout(() => onBack(), 2000);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to verify code', {
-        duration: 4000
+      toast.error(error.response?.data?.message || 'Invalid OTP or something went wrong. Please try again.', {
+        duration: 5000,
+        position: 'top-center',
+        style: {
+          background: '#333',
+          color: '#fff',
+        },
       });
     } finally {
       setIsSubmitting(false);
@@ -75,7 +78,15 @@ const ForgotPasswordForm = ({ onBack }) => {
       exit={{ x: -100, opacity: 0 }}
       className="p-8 md:p-12 col-span-2 md:col-span-1"
     >
-      <h2 className="text-3xl font-bold text-white mb-8">Reset Password</h2>
+      <Toaster />
+      <h2 className="text-3xl font-bold text-white mb-4">
+        {step === 1 ? 'Reset Password' : 'Verify OTP'}
+      </h2>
+      {step === 2 && (
+        <p className="text-white/70 mb-8">
+          Enter the OTP sent to: <span className="text-white font-medium">{email}</span>
+        </p>
+      )}
       {step === 1 ? (
         <form onSubmit={handleSendOTP} className="space-y-6">
           <input

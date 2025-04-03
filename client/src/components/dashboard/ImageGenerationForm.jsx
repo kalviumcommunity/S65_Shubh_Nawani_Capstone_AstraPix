@@ -1,16 +1,29 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Sparkles, Loader2, Coins } from 'lucide-react';
 
-const ImageGenerationForm = ({ 
-  prompt, 
-  setPrompt, 
-  handleGenerateImage, 
-  generating, 
-  credits, 
-  generationError,
-  generatedImage 
-}) => {
+// Add array of random prompts
+const randomPrompts = [
+  "A magical treehouse in a bioluminescent forest at night",
+  "A steampunk city floating in the clouds",
+  "A cozy cafe on Mars with Earth visible through the window",
+  "A library inhabited by ghostly readers",
+  "An underwater palace made of crystal and coral",
+  "A garden where musical instruments grow like plants",
+  "A train station for time travelers",
+  "A city where buildings are made of books",
+  "A market in the clouds where stars are sold",
+  "A laboratory where potions create different weather"
+];
+
+const ImageGenerationForm = ({ prompt, setPrompt, credits, generating, generatedImage, generationError, handleGenerateImage }) => {
+  
+  const handleSurpriseMe = (e) => {
+    e.preventDefault();
+    const randomPrompt = randomPrompts[Math.floor(Math.random() * randomPrompts.length)];
+    setPrompt(randomPrompt);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -21,39 +34,52 @@ const ImageGenerationForm = ({
         Generate Image
       </h3>
       <form onSubmit={handleGenerateImage} className="space-y-4">
-        <div>
-          <label className="block text-white/80 mb-2">
-            Enter your prompt
-          </label>
-          <input
-            type="text"
+        <div className="flex gap-2">
+          <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500 text-white placeholder-white/50 sm:text-base text-sm"
-            placeholder="A beautiful space scene..."
-            disabled={generating || credits <= 0}
+            placeholder="Describe the image you want to generate..."
+            className="w-full px-4 py-3 bg-white/5 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            rows="3"
           />
         </div>
-        <button
-          type="submit"
-          disabled={generating || !prompt.trim() || credits <= 0}
-          className={`w-full py-2 px-4 rounded-lg sm:text-base text-sm ${
-            generating || !prompt.trim() || credits <= 0
-              ? 'bg-gray-400/50 cursor-not-allowed'
-              : 'bg-purple-600/90 hover:bg-purple-700/90'
-          } text-white font-semibold transition-all duration-200`}
-        >
-          {generating ? (
-            <span className="flex items-center justify-center">
-              <Loader2 className="animate-spin mr-2 h-5 w-5" />
-              Generating...
-            </span>
-          ) : credits <= 0 ? (
-            'No credits available'
-          ) : (
-            'Generate Image'
-          )}
-        </button>
+
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleSurpriseMe}
+            type="button"
+            className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg text-white/90 hover:text-white flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            Surprise Me
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            disabled={generating || !prompt.trim() || credits <= 0}
+            type="submit"
+            className={`flex-1 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2
+              ${generating || !prompt.trim() || credits <= 0
+                ? 'bg-gray-600 cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'
+              }`}
+          >
+            {generating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Generate Image ({credits} credit{credits !== 1 ? 's' : ''})
+              </>
+            )}
+          </motion.button>
+        </div>
       </form>
 
       {generationError && (

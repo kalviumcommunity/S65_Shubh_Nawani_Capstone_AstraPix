@@ -83,4 +83,35 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
+router.post('/update-username', async (req, res) => {
+    try {
+      const { email, newUsername } = req.body;
+      const user = await User.findOneAndUpdate(
+        { email },
+        { username: newUsername },
+        { new: true }
+      );
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      res.json({
+        success: true,
+        message: 'Username updated successfully',
+        user: {
+          email: user.email,
+          username: user.username
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error updating username',
+        error: error.message
+      });
+    }
+  });
+  
+
 module.exports = router

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Loader, Download, Share2, Trash2, ArrowUpDown } from 'lucide-react';
+import { PlusCircle, Loader, Download, Share2, Trash2, ArrowUpDown, X, Maximize2, ZoomIn, ZoomOut } from 'lucide-react';
 import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
 import ImageViewer from '../common/ImageViewer';
@@ -49,6 +49,8 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
   const [sortNewestFirst, setSortNewestFirst] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const fetchUserData = async () => {
     try {
@@ -216,6 +218,71 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
     }))
   , [paginatedImages]);
 
+  const FullscreenViewer = ({ image }) => (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 z-30 flex items-center justify-center p-4"
+      onClick={() => setFullscreenImage(null)}
+    >
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative max-w-2xl w-full mx-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close button - Moved outside image container */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          onClick={() => setFullscreenImage(null)}
+          className="absolute -top-10 right-0 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white"
+        >
+          <X className="w-5 h-5" />
+        </motion.button>
+
+        <div className="bg-gray-900/90 rounded-lg overflow-hidden backdrop-blur-sm">
+          <img
+            src={image.imageUrl}
+            alt={image.prompt}
+            className="w-full h-auto rounded-t-lg"
+          />
+          
+          <div className="p-4 border-t border-white/10">
+            <p className="text-white/90 text-sm mb-3">{image.prompt}</p>
+            <div className="flex items-center justify-center gap-4">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                onClick={() => handleDownload(image)}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+              >
+                <Download className="w-4 h-4 text-white" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                onClick={() => handleShare(image)}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+              >
+                <Share2 className="w-4 h-4 text-white" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                onClick={() => {
+                  handleDelete(image._id);
+                  setFullscreenImage(null);
+                }}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+
   if (loading) {
     return (
       <>
@@ -311,11 +378,9 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
                 <motion.div
                   key={image._id}
                   variants={itemVariants}
-                  className="group relative rounded-xl overflow-hidden shadow-lg cursor-pointer"
+                  className="group relative rounded-xl overflow-hidden shadow-lg"
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300 }}
-                  layoutId={`image-${image._id}`}
-                  onClick={() => setSelectedImage(image)}
                 >
                   <img 
                     src={image.imageUrl} 
@@ -332,22 +397,15 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           onClick={() => handleDownload(image)}
-                          disabled={downloadProgress[image._id]}
-                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
-                          title="Download"
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
                         >
-                          {downloadProgress[image._id] ? (
-                            <Loader className="w-4 h-4 text-white animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4 text-white" />
-                          )}
+                          <Download className="w-4 h-4 text-white" />
                         </motion.button>
                         
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           onClick={() => handleShare(image)}
-                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-                          title="Share"
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
                         >
                           <Share2 className="w-4 h-4 text-white" />
                         </motion.button>
@@ -355,14 +413,17 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           onClick={() => handleDelete(image._id)}
-                          className={`p-2 ${
-                            deleteConfirm === image._id 
-                              ? 'bg-red-500 hover:bg-red-600' 
-                              : 'bg-white/10 hover:bg-white/20'
-                          } rounded-full transition-colors`}
-                          title={deleteConfirm === image._id ? 'Click again to confirm delete' : 'Delete'}
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
                         >
                           <Trash2 className="w-4 h-4 text-white" />
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          onClick={() => setFullscreenImage(image)}
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+                        >
+                          <Maximize2 className="w-4 h-4 text-white" />
                         </motion.button>
                       </div>
                     </div>
@@ -378,6 +439,12 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
           isOpen={!!selectedImage}
           onClose={() => setSelectedImage(null)}
         />
+
+        <AnimatePresence>
+          {fullscreenImage && (
+            <FullscreenViewer image={fullscreenImage} />
+          )}
+        </AnimatePresence>
 
         {!isMinimal && images.length > ITEMS_PER_PAGE && (
           <motion.div 
