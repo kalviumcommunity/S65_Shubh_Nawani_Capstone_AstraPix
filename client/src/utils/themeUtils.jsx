@@ -1,3 +1,6 @@
+import LogoDark from '../assets/AstraPix_Logo_Dark.jpg';
+import LogoLight from '../assets/AstraPix_Logo_Light.jpg';
+
 export const updateFavicon = (isDarkMode) => {
   let link = document.querySelector("link[rel~='icon']");
   if (!link) {
@@ -30,13 +33,9 @@ export const updateFavicon = (isDarkMode) => {
     link.href = canvas.toDataURL();
   };
 
-  img.src = isDarkMode 
-    ? '/src/assets/AstraPix_Logo_Dark.jpg'
-    : '/src/assets/AstraPix_Logo_Light.jpg';
+  img.src = isDarkMode ? LogoDark : LogoLight;
 };
 
 export const getLogoSrc = (isDarkMode) => {
-  return isDarkMode 
-    ? '/src/assets/AstraPix_Logo_Dark.jpg'
-    : '/src/assets/AstraPix_Logo_Light.jpg';
+  return isDarkMode ? LogoDark : LogoLight;
 };
