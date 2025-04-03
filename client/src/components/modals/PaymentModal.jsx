@@ -4,58 +4,50 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
 
+const plans = [
+    { id: 1, credits: 10, amount: 99900 },
+    { id: 2, credits: 25, amount: 199900 },
+    { id: 3, credits: 50, amount: 299900 }
+];
+
 const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
+    const [loadingPlan, setLoadingPlan] = useState(null);
     const [selectedPlan, setSelectedPlan] = useState(null);
 
-    const plans = [
-        { credits: 10, amount: 99900 },
-        { credits: 25, amount: 199900 },
-        { credits: 50, amount: 299900 }
-    ];
-
-    const handlePayment = async (plan) => {
+    const handleCheckout = async (plan) => {
         if (loading) return;
-        setLoading(true);
-        setSelectedPlan(plan);
+        setLoadingPlan(plan.id);
         
         try {
-            const { data } = await axios.post('http://localhost:8000/api/payment/create-order', {
-                amount: plan.amount,
-                credits: plan.credits
-            });
-
-            const options = {
-                key: data.keyId,
-                amount: data.amount,
-                currency: data.currency,
-                name: 'AstraPix',
-                description: `${plan.credits} Credits Purchase`,
-                order_id: data.orderId,
-                handler: async (response) => {
-                    try {
-                        const verifyData = await axios.post('http://localhost:8000/api/payment/verify-payment', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-                        onSuccess(verifyData.data.credits);
-                        onClose();
-                        toast.success('Payment successful!');
-                    } catch (error) {
-                        toast.error('Payment verification failed');
-                    }
-                },
-                theme: { color: '#7C3AED' }
-            };
-
-            const razorpay = new window.Razorpay(options);
-            razorpay.open();
+            const response = await axios.post(
+                `${import.meta.env.VITE_BASE_URI}/payment/create-checkout-session`,
+                { priceId: plan.priceId },
+                { 
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                    timeout: 10000
+                }
+            );
+            window.location.href = response.data.url;
         } catch (error) {
-            toast.error('Failed to initiate payment');
+            toast.error('Failed to initiate checkout');
         } finally {
-            setLoading(false);
-            setSelectedPlan(null);
+            setLoadingPlan(null);
+        }
+    };
+
+    const checkPaymentStatus = async () => {
+        try {
+            const response = await axios.get(
+                `${import.meta.env.VITE_BASE_URI}/payment/check-payment-status`,
+                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }}
+            );
+            if (response.data.success) {
+                onSuccess(response.data.credits);
+                onClose();
+            }
+        } catch (error) {
+            console.error('Failed to check payment status');
         }
     };
 
@@ -96,7 +88,7 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                                 key={plan.credits}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                onClick={() => handlePayment(plan)}
+                                onClick={() => handleCheckout(plan)}
                                 disabled={loading}
                                 className={`w-full p-4 rounded-lg border ${
                                     selectedPlan === plan
@@ -130,4 +122,4 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
     );
 };
 
-export default PaymentModal;
+export default React.memo(PaymentModal);

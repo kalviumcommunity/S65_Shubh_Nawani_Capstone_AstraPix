@@ -1,18 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { Download, Share, Trash2 } from 'lucide-react';
-import axios from 'axios'; // Add this import
-import { toast } from 'react-hot-toast'; // Add this import
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
-const ImageCard = React.memo(({ image, onDelete }) => {
+const ImageCard = ({ image, onDelete }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8000/generate/${image._id}`, {
+      await axios.delete(`${import.meta.env.VITE_BASE_URI}/generate/${image._id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       
-      onDelete(image._id); // Pass the image ID to the parent component
+      onDelete(image._id);
       toast.success('Image deleted successfully');
     } catch (error) {
       toast.error('Failed to delete image');
@@ -31,25 +31,26 @@ const ImageCard = React.memo(({ image, onDelete }) => {
     }
   };
 
-  // Generate optimized image URL for thumbnails
-  const thumbnailUrl = useMemo(() => {
-    const baseUrl = image.imageUrl;
-    return baseUrl.replace('/upload/', '/upload/w_400,c_scale,q_auto:eco/');
-  }, [image.imageUrl]);
+  const imgAttributes = {
+    loading: "lazy",
+    decoding: "async",
+    width: "400",
+    height: "400",
+    className: "w-full h-full object-cover transition-transform duration-200"
+  };
+
+  const thumbnailUrl = useMemo(() => 
+    image.imageUrl.replace('/upload/', '/upload/w_400,f_auto,q_auto:eco/')
+  , [image.imageUrl]);
 
   return (
-    <div className="relative rounded-lg overflow-hidden bg-black/5">
+    <div className="relative aspect-square rounded-lg overflow-hidden bg-black/5">
       <img
         src={thumbnailUrl}
-        alt=""
-        className="w-full aspect-square object-cover"
-        loading="lazy"
-        decoding="async"
-        width="400"
-        height="400"
+        alt={image.prompt}
+        {...imgAttributes}
       />
       
-      {/* Simplified overlay without transitions */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 opacity-0 group-hover:opacity-100">
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <p className="text-white text-sm line-clamp-2 mb-3">{image.prompt}</p>
@@ -76,7 +77,7 @@ const ImageCard = React.memo(({ image, onDelete }) => {
             </div>
             
             <button
-              onClick={handleDelete} // Changed from onDelete to handleDelete
+              onClick={handleDelete}
               className="p-2 bg-red-500/20 rounded-full hover:bg-red-500/30 transition-colors"
               title="Delete"
             >
@@ -87,6 +88,6 @@ const ImageCard = React.memo(({ image, onDelete }) => {
       </div>
     </div>
   );
-}, (prevProps, nextProps) => prevProps.image._id === nextProps.image._id);
+};
 
-export default ImageCard;
+export default memo(ImageCard);

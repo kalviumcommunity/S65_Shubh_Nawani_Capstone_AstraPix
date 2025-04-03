@@ -53,8 +53,8 @@ const Dashboard = () => {
       const { signal } = controller;
 
       Promise.all([
-        axios.get(`http://localhost:8000/check/credits/${user.email}`, { ...authHeaders, signal }),
-        axios.get('http://localhost:8000/generate/gallery', { ...authHeaders, signal })
+        axios.get(`${import.meta.env.VITE_BASE_URI}/check/credits/${user.email}`, { ...authHeaders, signal }),
+        axios.get(`${import.meta.env.VITE_BASE_URI}/generate/gallery`, { ...authHeaders, signal })
       ]).then(([creditResponse, imagesResponse]) => {
         setCredits(creditResponse.data.credit);
         setUserImages(imagesResponse.data.images);
@@ -91,7 +91,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchRecentImages = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/generate/gallery', {
+        const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/generate/gallery`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setRecentImages((response.data.images || []).slice(0, 3));
@@ -129,7 +129,7 @@ const Dashboard = () => {
 
   const handleDeleteImage = async (imageId) => {
     try {
-      const response = await axios.delete(`http://localhost:8000/generate/${imageId}`, {
+      const response = await axios.delete(`${import.meta.env.VITE_BASE_URI}/generate/${imageId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 
@@ -165,7 +165,7 @@ const Dashboard = () => {
     setGeneratedImage(null);
 
     try {
-        const response = await axios.post('http://localhost:8000/generate/generate', 
+        const response = await axios.post(`${import.meta.env.VITE_BASE_URI}/generate/generate`, 
             { prompt: prompt.trim(), userId: user._id },
             authHeaders
         );

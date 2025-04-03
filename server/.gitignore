@@ -1,3 +1,17 @@
-node_modules/
+# dependencies
+/node_modules
 package-lock.json
+
+# environment
 .env
+.env.local
+.env.development
+.env.production
+
+# uploads and logs
+/uploads
+/logs
+*.log
+
+# misc
+.DS_Store

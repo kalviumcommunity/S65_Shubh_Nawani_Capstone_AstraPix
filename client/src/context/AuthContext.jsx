@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
@@ -16,34 +16,39 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await axios.get('http://localhost:8000/api/profile', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          setUser(response.data);
-          setIsAuthenticated(true);
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        } catch (error) {
-          localStorage.removeItem('token');
-          delete axios.defaults.headers.common['Authorization'];
-        }
-      }
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
       setLoading(false);
-    };
+      return;
+    }
 
-    checkAuth();
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000
+      });
+      setUser(response.data);
+      setIsAuthenticated(true);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } catch (error) {
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (token, userData = null) => {
     try {
       localStorage.setItem('token', token);
       
       if (!userData) {
-        const response = await axios.get('http://localhost:8000/api/profile', {
+        const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/api/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         userData = response.data;
@@ -66,6 +71,17 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     delete axios.defaults.headers.common['Authorization'];
+  };
+
+  const verifyToken = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/api/verify-token`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // ...existing code...
+    } catch (error) {
+      // ...existing code...
+    }
   };
 
   const value = {

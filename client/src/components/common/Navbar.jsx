@@ -50,7 +50,7 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
 
   const fetchUpdatedUserData = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/users/${user.email}`, {
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/api/users/${user.email}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (response.data.success) {
@@ -90,7 +90,7 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await axios.post('http://localhost:8000/api/update-username', {
+          const response = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/update-username`, {
             email: user.email,
             newUsername: result.value
           });

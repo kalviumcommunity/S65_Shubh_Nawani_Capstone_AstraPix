@@ -69,7 +69,6 @@ const getUserImages = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Gallery fetch error:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching gallery images'

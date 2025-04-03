@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Sun, Moon, Loader2, Mail } from 'lucide-react';
@@ -18,6 +18,12 @@ const pageTransition = {
   duration: 0.15 // Reduced from 0.2
 };
 
+const backgroundStyle = {
+  backgroundImage: `url(${BackgroundImage})`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center'
+};
+
 const AuthPage = () => {
   const { login } = useAuth();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
@@ -31,13 +37,14 @@ const AuthPage = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleToggle = () => {
+  // Optimize form reset
+  const handleToggle = useCallback(() => {
     setIsLogin(!isLogin);
     setError(null);
     setFormData({ email: '', password: '' });
     setShowOTPInput(false);
     setOtp('');
-  };
+  }, [isLogin]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,9 +53,10 @@ const AuthPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8000/auth/google';
+    window.location.href = `${import.meta.env.VITE_BASE_URI}/auth/google`;
   };
 
+  // Add request timeout
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -57,10 +65,14 @@ const AuthPage = () => {
     setError(null);
 
     try {
+      const response = await axios({
+        method: 'post',
+        url: `${import.meta.env.VITE_BASE_URI}/api/${isLogin ? 'login' : 'send-otp'}`,
+        data: isLogin ? formData : { email: formData.email },
+        timeout: 8000
+      });
+
       if (!isLogin) {
-        const response = await axios.post('http://localhost:8000/api/send-otp', {
-          email: formData.email
-        });
         setShowOTPInput(true);
         toast.success('OTP sent to your email!', {
           duration: 5000,
@@ -71,7 +83,6 @@ const AuthPage = () => {
           },
         });
       } else {
-        const response = await axios.post('http://localhost:8000/api/login', formData);
         login(response.data.token, response.data.user);
         toast.success('Welcome back!', {
           duration: 5000,
@@ -99,12 +110,12 @@ const AuthPage = () => {
     setError(null);
 
     try {
-      await axios.post('http://localhost:8000/api/verify-otp', {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/verify-otp`, {
         email: formData.email,
         otp
       });
 
-      const response = await axios.post('http://localhost:8000/api/signup', formData);
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/signup`, formData);
       login(response.data.token, response.data.user);
       toast.success('Account created successfully!');
       navigate('/dashboard');
@@ -121,7 +132,7 @@ const AuthPage = () => {
     setIsSubmitting(true);
     
     try {
-      await axios.post('http://localhost:8000/api/send-otp', {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/send-otp`, {
         email: formData.email
       });
       toast.success('New OTP sent!');
@@ -139,14 +150,7 @@ const AuthPage = () => {
   return (
     <div className={`min-h-screen relative overflow-hidden ${darkMode ? 'dark' : ''}`}>
       {/* Background with lazy loading */}
-      <div className="fixed inset-0 z-0">
-        <img 
-          src={BackgroundImage} 
-          alt="Background" 
-          className="w-full h-full object-cover opacity-50"
-          loading="lazy"
-          fetchpriority="high"
-        />
+      <div className="fixed inset-0 z-0" style={backgroundStyle}>
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-indigo-600/50" />
       </div>
 
@@ -283,4 +287,4 @@ const AuthPage = () => {
   );
 };
 
-export default AuthPage;
+export default React.memo(AuthPage);

@@ -16,12 +16,23 @@ const randomPrompts = [
   "A laboratory where potions create different weather"
 ];
 
+// Simplified animation
+const formVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1 }
+};
+
 const ImageGenerationForm = ({ prompt, setPrompt, credits, generating, generatedImage, generationError, handleGenerateImage }) => {
   
   const handleSurpriseMe = (e) => {
     e.preventDefault();
     const randomPrompt = randomPrompts[Math.floor(Math.random() * randomPrompts.length)];
     setPrompt(randomPrompt);
+  };
+
+  // Simple onChange handler instead of debounce
+  const handlePromptChange = (e) => {
+    setPrompt(e.target.value);
   };
 
   return (
@@ -37,7 +48,7 @@ const ImageGenerationForm = ({ prompt, setPrompt, credits, generating, generated
         <div className="flex gap-2">
           <textarea
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={handlePromptChange}
             placeholder="Describe the image you want to generate..."
             className="w-full px-4 py-3 bg-white/5 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
             rows="3"

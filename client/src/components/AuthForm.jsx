@@ -3,6 +3,12 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import GoogleIcon from '../assets/google.png';
 
+// Optimize motion animations
+const pageTransition = {
+  duration: 0.2,
+  ease: "easeInOut"
+};
+
 const AuthForm = ({
   isLogin,
   formData,
@@ -18,9 +24,10 @@ const AuthForm = ({
   return (
     <motion.div
       key="auth-form"
-      initial={{ x: 100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -100, opacity: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={pageTransition}
       className="p-8 md:p-12"
     >
       <h2 className="text-3xl font-bold text-white mb-8">
@@ -93,4 +100,4 @@ const AuthForm = ({
   );
 };
 
-export default AuthForm;
+export default React.memo(AuthForm);

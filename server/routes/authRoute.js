@@ -33,7 +33,8 @@ router.get('/google/callback',
         res.cookie('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'Lax'
+          sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
+          maxAge: 24 * 60 * 60 * 1000 // 24 hours
         });
 
         res.redirect(`${process.env.CLIENT_URL}/oauth-callback?token=${token}&user=${userDataParam}`);

@@ -12,25 +12,17 @@ import ImageViewer from '../common/ImageViewer';
 
 const ITEMS_PER_PAGE = 6;
 
+// Simplify animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
+  show: { opacity: 1 }  // Removed staggerChildren for better performance
 };
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { opacity: 0 },
   show: { 
-    y: 0, 
     opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100
-    }
+    transition: { duration: 0.2 }  // Reduced animation duration
   }
 };
 
@@ -54,7 +46,7 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
 
   const fetchUserData = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/check/credits/${user.email}`, {
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/check/credits/${user.email}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setCredits(response.data.credit);
@@ -65,7 +57,7 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/generate/gallery', {
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/generate/gallery`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setImages(response.data.images || []);
@@ -111,12 +103,16 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
 
     // Backend sync
     try {
-      await axios.delete(`http://localhost:8000/generate/${imageId}`, {
+      await axios.delete(`${import.meta.env.VITE_BASE_URI}/generate/${imageId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/generate/gallery`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setImages(response.data.images || []);
     } catch (error) {
       // Revert on failure
-      const response = await axios.get('http://localhost:8000/generate/gallery', {
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/generate/gallery`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setImages(response.data.images || []);
@@ -211,10 +207,11 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
     return sortedImages.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [sortedImages, currentPage]);
 
+  // Optimize image loading
   const optimizedImages = useMemo(() => 
     paginatedImages.map(img => ({
       ...img,
-      imageUrl: img.imageUrl.replace('/upload/', '/upload/w_400,f_auto,q_auto:eco/')
+      imageUrl: img.imageUrl.replace('/upload/', '/upload/w_400,f_auto,q_auto:low/') // Lower quality for better performance
     }))
   , [paginatedImages]);
 

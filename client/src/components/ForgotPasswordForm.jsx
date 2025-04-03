@@ -4,6 +4,11 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
+const formTransition = {
+  duration: 0.2,
+  ease: "easeInOut"
+};
+
 const ForgotPasswordForm = ({ onBack }) => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -13,27 +18,19 @@ const ForgotPasswordForm = ({ onBack }) => {
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
     try {
-      await axios.post('http://localhost:8000/api/forgot-password', { email });
-      toast.success('OTP sent to your email! Please check your inbox.', {
-        duration: 5000,
-        position: 'top-center',
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
-      });
+      await axios.post(
+        `${import.meta.env.VITE_BASE_URI}/api/forgot-password`, 
+        { email },
+        { timeout: 8000 }
+      );
+      toast.success('OTP sent! Check your email.');
       setStep(2);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send OTP. Please try again.', {
-        duration: 5000,
-        position: 'top-center',
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
-      });
+      toast.error(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +40,7 @@ const ForgotPasswordForm = ({ onBack }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.post('http://localhost:8000/api/verify-otp', {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/verify-otp`, {
         email,
         otp,
         newPassword
@@ -150,4 +147,4 @@ const ForgotPasswordForm = ({ onBack }) => {
   );
 };
 
-export default ForgotPasswordForm;
+export default React.memo(ForgotPasswordForm);

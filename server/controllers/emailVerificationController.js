@@ -12,13 +12,13 @@ const generateOTP = () => crypto.randomInt(100000, 999999).toString();
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false,
+  secure: process.env.NODE_ENV === 'production',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
   tls: {
-    rejectUnauthorized: false // Only during development
+    rejectUnauthorized: process.env.NODE_ENV === 'production'
   }
 });
 
@@ -26,10 +26,8 @@ const transporter = nodemailer.createTransport({
 const testEmailConfig = async () => {
   try {
     const result = await transporter.verify();
-    console.log('Email configuration is valid');
     return true;
   } catch (error) {
-    console.error('Email configuration error:', error);
     return false;
   }
 };
@@ -82,10 +80,10 @@ exports.sendOTP = async (req, res) => {
 
     const otp = generateOTP();
     
-    // Store OTP with expiration (10 minutes)
+    // Store OTP with expiration from env
     otpStore.set(email, {
       otp,
-      expiry: Date.now() + 600000 // 10 minutes
+      expiry: Date.now() + parseInt(process.env.OTP_EXPIRE_TIME)
     });
 
     await sendVerificationEmail(email, otp);
@@ -95,7 +93,6 @@ exports.sendOTP = async (req, res) => {
       message: 'OTP sent successfully' 
     });
   } catch (error) {
-    console.error('Send OTP Error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to send OTP' 
@@ -146,7 +143,6 @@ exports.verifyOTP = async (req, res) => {
       message: 'Email verified successfully' 
     });
   } catch (error) {
-    console.error('Verify OTP Error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to verify OTP' 
@@ -180,7 +176,6 @@ exports.resendOTP = async (req, res) => {
       message: 'New OTP sent successfully'
     });
   } catch (error) {
-    console.error('Resend OTP Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to resend OTP'

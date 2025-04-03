@@ -1,4 +1,5 @@
 const express = require('express');
+const { authLimiter, imageLimiter, apiLimiter } = require('./middlewares/rateLimiter');
 const dotenv = require('dotenv');
 dotenv.config();
 const cors = require('cors');
@@ -19,13 +20,29 @@ require('./config/passport');
 const app = express();
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  origin: [process.env.CLIENT_URL, process.env.CLIENT_URL_ALT],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
+// Add security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+
 app.use(express.json());
 app.use(passport.initialize());
+
+// Apply rate limiting before routes
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/signup', authLimiter);
+app.use('/auth', authLimiter);
+app.use('/generate/generate', imageLimiter);
+app.use('/api', apiLimiter);  // General API rate limiting
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/verify', emailVerificationRoute);
@@ -49,9 +66,7 @@ app.get("/", (req, res) => {
 app.listen(PORT, async () => {
   try {
     await connectDB();
-    console.log(`Server running on port ${PORT}`);
   } catch (err) {
-    console.error('Server startup error:', err.message);
     process.exit(1);
   }
 });
