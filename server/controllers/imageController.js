@@ -3,18 +3,24 @@ const Credit = require('../models/creditModel');
 const cloudinary = require('../config/cloudinary');
 const { uploadToCloudinary } = require('../utils/cloudinaryUtils');
 const Replicate = require("replicate");
+const upload = require('../utils/memoryStorage');
 
 const replicate = new Replicate({
     auth: process.env.REPLICATE_API_TOKEN,
 });
 
-const generateImage = async (req) => {
-    const { prompt } = req.body;
-    const userId = req.user._id;
-
-    if (!prompt) throw new Error("Prompt is required");
-
+const generateImage = async (req, res) => {
     try {
+        const { prompt } = req.body;
+        const userId = req.user._id;
+
+        if (!prompt) {
+            return res.status(400).json({
+                success: false,
+                message: "Prompt is required"
+            });
+        }
+
         const output = await replicate.run(
             "black-forest-labs/flux-schnell",
             { input: { prompt } }
@@ -39,15 +45,19 @@ const generateImage = async (req) => {
             await userCredits.save();
         }
 
-        return {
+        res.json({
             success: true,
             output,
             cloudinaryUrl: cloudinaryResult.url,
             message: "Image generated successfully",
             remainingCredits: userCredits ? userCredits.credit : 0
-        };
+        });
     } catch (error) {
-        throw error;
+        console.error('Generation error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -108,4 +118,9 @@ const deleteImage = async (req, res) => {
     }
 };
 
-module.exports = { generateImage, getUserImages, deleteImage };
+module.exports = { 
+    generateImage,
+    getUserImages, 
+    deleteImage,
+    uploadMiddleware: upload.single('image') // Export middleware separately
+};

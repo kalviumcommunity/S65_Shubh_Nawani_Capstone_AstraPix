@@ -1,41 +1,29 @@
-const fs = require('fs');
-const fetch = require('node-fetch');
-const path = require('path');
 const cloudinary = require('../config/cloudinary');
 
-const downloadImage = async (url, filepath) => {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Download failed');
-    await fs.promises.writeFile(filepath, await response.buffer());
-    return filepath;
-  } catch (error) {
-    throw error;
-  }
-};
+const uploadToCloudinary = async (imageData) => {
+    try {
+        // Fetch the image from URL if imageData is a URL string
+        const imageResponse = await fetch(imageData);
+        const buffer = await imageResponse.arrayBuffer();
+        
+        // Convert buffer to base64
+        const base64Image = Buffer.from(buffer).toString('base64');
+        const dataURI = `data:image/jpeg;base64,${base64Image}`;
 
-const uploadToCloudinary = async (imageUrl) => {
-  const tempPath = path.join(__dirname, '..', 'uploads', `temp-${Date.now()}.png`);
-  
-  try {
-    await fs.promises.mkdir(path.dirname(tempPath), { recursive: true });
-    await downloadImage(imageUrl, tempPath);
-    
-    const result = await cloudinary.uploader.upload(tempPath, {
-      folder: 'astrapix',
-      unique_filename: true,
-      resource_type: 'auto'
-    });
-    
-    return {
-      url: result.secure_url,
-      public_id: result.public_id
-    };
-  } catch (error) {
-    throw error;
-  } finally {
-    fs.existsSync(tempPath) && fs.unlinkSync(tempPath);
-  }
+        // Upload base64 data to Cloudinary
+        const result = await cloudinary.uploader.upload(dataURI, {
+            folder: 'astrapix',
+            resource_type: 'auto'
+        });
+
+        return {
+            url: result.secure_url,
+            public_id: result.public_id
+        };
+    } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        throw new Error('Failed to upload image to Cloudinary: ' + error.message);
+    }
 };
 
 module.exports = { uploadToCloudinary };

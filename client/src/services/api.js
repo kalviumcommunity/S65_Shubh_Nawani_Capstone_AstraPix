@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 10000,
+  timeout: 8000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -19,6 +19,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.code === 'ECONNABORTED') {
+      // Handle timeout
+      return Promise.reject(new Error('Request timed out. Please try again.'));
+    }
     if (error.code === 'ERR_CERT_AUTHORITY_INVALID') {
       console.error('Certificate Error. Retrying with HTTPS...');
       const retryConfig = {
