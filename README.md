@@ -1,6 +1,3 @@
-### Frontend Deployed Link: https://client-omega-lovat.vercel.app/
-### Backend Deployed Link: https://s65-shubh-nawani-capstone-astrapix.onrender.com/
-
 # AstraPix
 
 AstraPix is an AI-powered image generation platform that enables users to create stunning visuals using state-of-the-art deep learning models. It offers both **text-to-image (txt2img)** and **image-to-image (img2img)** generation using fine-tuned **Replicate AI models**. Users can generate images by providing text prompts or modifying existing images with AI-driven enhancements. AstraPix combines advanced generative AI with a seamless user experience, supporting **manual authentication and OAuth, GitHub** while integrating a **token-based payment system via Razorpay** for premium image generation.
