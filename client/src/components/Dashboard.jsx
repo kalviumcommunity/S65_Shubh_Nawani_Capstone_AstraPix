@@ -112,6 +112,7 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     localStorage.removeItem('token');
+    localStorage.removeItem('userData');  // Add this line
     toast.success('Successfully logged out!', {
       duration: 2000,
       position: 'top-center',
@@ -120,11 +121,7 @@ const Dashboard = () => {
         color: '#fff',
       },
     });
-
-    // Delete token and delay navigation
-    setTimeout(() => {
-      window.location.href = '/auth';  // Using window.location instead of navigate
-    }, 1000);
+    navigate('/auth');  // Direct navigation without setTimeout
   };
 
   const handleDeleteImage = async (imageId) => {

@@ -25,6 +25,7 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Yes, logout',
+      allowOutsideClick: false,  // Add this line
       customClass: {
         popup: 'rounded-lg',
         confirmButton: 'px-4 py-2 rounded-md',
@@ -32,18 +33,7 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        toast.success('Successfully logged out!', {
-          duration: 2000,
-          position: 'top-center',
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        
-        setTimeout(() => {
-          handleLogout();
-        }, 1000);
+        handleLogout();  // Remove the toast and setTimeout here
       }
     });
   };

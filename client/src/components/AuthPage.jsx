@@ -110,7 +110,7 @@ const AuthPage = () => {
     setError(null);
 
     try {
-      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/verify-otp`, {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/email/verify-otp`, {
         email: formData.email,
         otp
       });
@@ -132,7 +132,7 @@ const AuthPage = () => {
     setIsSubmitting(true);
     
     try {
-      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/send-otp`, {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/email/send-otp`, {
         email: formData.email
       });
       toast.success('New OTP sent!');

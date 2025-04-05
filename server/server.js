@@ -85,7 +85,7 @@ app.use('/generate/generate', imageLimiter);
 app.use('/api', apiLimiter);  // General API rate limiting
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/api/verify', emailVerificationRoute);
+app.use('/api/email', emailVerificationRoute);
 app.use('/auth', authRoute);
 app.use('/api', userRoute); // This will handle forgot password routes
 app.use('/check', creditRoute);
