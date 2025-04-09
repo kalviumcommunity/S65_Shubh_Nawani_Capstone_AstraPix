@@ -78,11 +78,11 @@ app.use(express.json());
 app.use(passport.initialize());
 
 // Apply rate limiting before routes
-// app.use('/api/users/login', authLimiter);
-// app.use('/api/users/signup', authLimiter);
-// app.use('/auth', authLimiter);
-// app.use('/generate/generate', imageLimiter);
-// app.use('/api', apiLimiter);  // General API rate limiting
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/signup', authLimiter);
+app.use('/auth', authLimiter);
+app.use('/generate/generate', imageLimiter);
+app.use('/api', apiLimiter); 
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api', emailVerificationRoute);
