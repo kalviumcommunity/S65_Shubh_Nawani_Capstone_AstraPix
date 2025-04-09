@@ -23,13 +23,17 @@ const ForgotPasswordForm = ({ onBack }) => {
     setIsSubmitting(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_BASE_URI}/api/forgot-password`, 
-        { email },
+        `${import.meta.env.VITE_BASE_URI}/api/send-otp`, 
+        { 
+          email,
+          type: 'forgot-password'  // Add type parameter
+        },
         { timeout: 8000 }
       );
       toast.success('OTP sent! Check your email.');
       setStep(2);
     } catch (error) {
+      console.error('Send OTP Error:', error);
       toast.error(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setIsSubmitting(false);
@@ -38,31 +42,51 @@ const ForgotPasswordForm = ({ onBack }) => {
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
+    if (!otp || !newPassword) {
+      toast.error('Please enter both OTP and new password');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/verify-otp`, {
-        email,
-        otp,
-        newPassword
-      });
-      toast.success('Password updated successfully! Redirecting to login...', {
-        duration: 5000,
-        position: 'top-center',
-        style: {
-          background: '#333',
-          color: '#fff',
+      await axios.post(
+        `${import.meta.env.VITE_BASE_URI}/api/verify-otp`,
+        {
+          email,
+          otp,
+          newPassword,
+          type: 'forgot-password'  // Add type parameter
         },
-      });
+        { timeout: 8000 }
+      );
+      
+      toast.success('Password updated successfully!');
       setTimeout(() => onBack(), 2000);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Invalid OTP or something went wrong. Please try again.', {
-        duration: 5000,
-        position: 'top-center',
-        style: {
-          background: '#333',
-          color: '#fff',
+      console.error('Verify OTP Error:', error);
+      toast.error(error.response?.data?.message || 'Verification failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_BASE_URI}/api/send-otp`,
+        { 
+          email,
+          type: 'forgot-password'
         },
-      });
+        { timeout: 8000 }
+      );
+      toast.success('New OTP sent! Check your email.');
+    } catch (error) {
+      console.error('Resend OTP Error:', error);
+      toast.error(error.response?.data?.message || 'Failed to resend OTP');
     } finally {
       setIsSubmitting(false);
     }
@@ -135,6 +159,14 @@ const ForgotPasswordForm = ({ onBack }) => {
               'Reset Password'
             )}
           </button>
+          <button
+            type="button"
+            onClick={handleResendOTP}
+            disabled={isSubmitting}
+            className="w-full py-2 text-white/70 hover:text-white text-sm transition-colors"
+          >
+            Resend OTP
+          </button>
         </form>
       )}
       <button
@@ -148,3 +180,4 @@ const ForgotPasswordForm = ({ onBack }) => {
 };
 
 export default React.memo(ForgotPasswordForm);
+
