@@ -194,7 +194,30 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
     toast.success(`Credits updated! New balance: ${newCredits}`);
   };
 
+  // Optimize image loading with IntersectionObserver
+  const imageRef = useCallback(node => {
+    if (!node) return;
+    
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            observer.unobserve(img);
+          }
+        });
+      },
+      { rootMargin: '50px' }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  // Optimize sorted images calculation
   const sortedImages = useMemo(() => {
+    if (!images?.length) return [];
     return [...images].sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime();
       const timeB = new Date(b.createdAt).getTime();
@@ -320,164 +343,152 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
           openPaymentModal={() => setIsPaymentModalOpen(true)}
         />
       )}
-      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${!isMinimal ? 'py-8' : ''}`}>
-        {!isMinimal && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-between items-center mb-8"
-          >
-            <div className="flex items-center gap-4">
-              <h2 className="text-3xl font-bold text-white">Your Gallery</h2>
-              <button
-                onClick={() => setSortNewestFirst(!sortNewestFirst)}
-                className="flex items-center gap-2 px-3 py-1 text-sm bg-white/10 hover:bg-white/20 rounded-lg text-white/80 transition-colors"
-                title={sortNewestFirst ? "Newest First" : "Oldest First"}
-              >
-                <ArrowUpDown className="w-4 h-4" />
-                <span>{sortNewestFirst ? "Newest" : "Oldest"}</span>
-              </button>
-            </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
-            >
-              <PlusCircle className="w-5 h-5" />
-              <span>Create New</span>
-            </button>
-          </motion.div>
-        )}
-
-        <AnimatePresence mode="wait">
-          {!images.length ? (
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
+        <div className="max-w-[1600px] mx-auto"> {/* Increased max width */}
+          {!isMinimal && (
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="text-center py-16 bg-black/20 rounded-xl border border-white/10 backdrop-blur-sm"
+              className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8"
             >
-              <p className="text-white/80 mb-4">No images generated yet. Start creating!</p>
-              <button 
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Gallery</h2>
+                <button
+                  onClick={() => setSortNewestFirst(!sortNewestFirst)}
+                  className="flex items-center gap-2 px-3 py-1 text-sm bg-white/10 hover:bg-white/20 rounded-lg text-white/80 transition-colors"
+                >
+                  <ArrowUpDown className="w-4 h-4" />
+                  <span>{sortNewestFirst ? "Newest" : "Oldest"}</span>
+                </button>
+              </div>
+              
+              <button
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
+                className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
               >
-                Create Your First Image
+                <PlusCircle className="w-5 h-5" />
+                <span>Create New</span>
               </button>
             </motion.div>
-          ) : (
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {optimizedImages.map(image => (
-                <motion.div
-                  key={image._id}
-                  variants={itemVariants}
-                  className="group relative rounded-xl overflow-hidden shadow-lg"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
+          )}
+
+          {/* Main gallery grid */}
+          <AnimatePresence mode="wait">
+            {!images.length ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="col-span-full text-center py-16 bg-black/20 rounded-xl border border-white/10 backdrop-blur-sm"
+              >
+                <p className="text-white/80 mb-4">No images generated yet. Start creating!</p>
+                <button 
+                  onClick={() => navigate('/dashboard')}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
                 >
-                  <img 
-                    src={image.imageUrl} 
-                    alt={image.prompt} 
-                    className="w-full h-64 object-cover rounded-xl"
-                    loading="lazy"
-                  />
-                  
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-                      <p className="text-white text-sm line-clamp-2">{image.prompt}</p>
-                      
-                      <div className="flex items-center space-x-3">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          onClick={() => handleDownload(image)}
-                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
-                        >
-                          <Download className="w-4 h-4 text-white" />
-                        </motion.button>
-                        
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          onClick={() => handleShare(image)}
-                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
-                        >
-                          <Share2 className="w-4 h-4 text-white" />
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          onClick={() => handleDelete(image._id)}
-                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
-                        >
-                          <Trash2 className="w-4 h-4 text-white" />
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          onClick={() => setFullscreenImage(image)}
-                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
-                        >
-                          <Maximize2 className="w-4 h-4 text-white" />
-                        </motion.button>
+                  Create Your First Image
+                </button>
+              </motion.div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+                {paginatedImages.map((image, index) => (
+                  <motion.div
+                    key={image._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                    className="group relative rounded-xl overflow-hidden bg-black/5"
+                    style={{ minHeight: '300px', aspectRatio: '1/1' }}
+                  >
+                    <img
+                      src={`${image.imageUrl.replace('/upload/', '/upload/w_800,f_auto,q_auto/')}`}
+                      data-src={image.imageUrl}
+                      alt={image.prompt}
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      loading="lazy"
+                      ref={imageRef}
+                    />
+                    
+                    {/* Image Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+                        <p className="text-white text-xs sm:text-sm line-clamp-2 mb-2 sm:mb-3">
+                          {image.prompt}
+                        </p>
+                        <div className="flex justify-between items-center">
+                          <div className="flex space-x-2">
+                            <ActionButton icon={<Download />} onClick={() => handleDownload(image)} />
+                            {navigator.share && (
+                              <ActionButton icon={<Share2 />} onClick={() => handleShare(image)} />
+                            )}
+                            <ActionButton 
+                              icon={<Maximize2 />} 
+                              onClick={() => setFullscreenImage(image)} 
+                            />
+                          </div>
+                          <ActionButton 
+                            icon={<Trash2 />} 
+                            onClick={() => handleDelete(image._id)} 
+                            danger 
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </AnimatePresence>
+
+          <ImageViewer
+            image={selectedImage}
+            isOpen={!!selectedImage}
+            onClose={() => setSelectedImage(null)}
+          />
+
+          <AnimatePresence>
+            {fullscreenImage && (
+              <FullscreenViewer image={fullscreenImage} />
+            )}
+          </AnimatePresence>
+
+          {!isMinimal && images.length > ITEMS_PER_PAGE && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-8 flex justify-center gap-2"
+            >
+              {Array.from({ length: Math.ceil(images.length / ITEMS_PER_PAGE) })
+                .slice(Math.max(0, currentPage - 3), Math.min(currentPage + 2, Math.ceil(images.length / ITEMS_PER_PAGE)))
+                .map((_, idx) => (
+                  <motion.button
+                    key={idx}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCurrentPage(idx + 1)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === idx + 1 
+                        ? 'bg-purple-600 text-white' 
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    {idx + 1}
+                  </motion.button>
+                ))}
             </motion.div>
           )}
-        </AnimatePresence>
 
-        <ImageViewer
-          image={selectedImage}
-          isOpen={!!selectedImage}
-          onClose={() => setSelectedImage(null)}
-        />
-
-        <AnimatePresence>
-          {fullscreenImage && (
-            <FullscreenViewer image={fullscreenImage} />
+          {!isMinimal && images.length > 0 && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-white/60 mt-8"
+            >
+              Showing {paginatedImages.length} of {images.length} image{images.length !== 1 ? 's' : ''}
+            </motion.p>
           )}
-        </AnimatePresence>
-
-        {!isMinimal && images.length > ITEMS_PER_PAGE && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-8 flex justify-center gap-2"
-          >
-            {Array.from({ length: Math.ceil(images.length / ITEMS_PER_PAGE) })
-              .slice(Math.max(0, currentPage - 3), Math.min(currentPage + 2, Math.ceil(images.length / ITEMS_PER_PAGE)))
-              .map((_, idx) => (
-                <motion.button
-                  key={idx}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(idx + 1)}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === idx + 1 
-                      ? 'bg-purple-600 text-white' 
-                      : 'bg-white/10 text-white/60 hover:bg-white/20'
-                  }`}
-                >
-                  {idx + 1}
-                </motion.button>
-              ))}
-          </motion.div>
-        )}
-
-        {!isMinimal && images.length > 0 && (
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center text-white/60 mt-8"
-          >
-            Showing {paginatedImages.length} of {images.length} image{images.length !== 1 ? 's' : ''}
-          </motion.p>
-        )}
+        </div>
       </div>
 
       {/* Add PaymentModal */}
@@ -495,5 +506,20 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
     </>
   );
 };
+
+// Helper component for action buttons
+const ActionButton = ({ icon, onClick, danger = false }) => (
+  <motion.button
+    whileTap={{ scale: 0.95 }}
+    onClick={onClick}
+    className={`p-2 rounded-full transition-colors touch-manipulation ${
+      danger ? 'bg-red-500/20 hover:bg-red-500/30' : 'bg-white/20 hover:bg-white/30'
+    }`}
+  >
+    {React.cloneElement(icon, { 
+      className: `w-4 h-4 ${danger ? 'text-red-400' : 'text-white'}`
+    })}
+  </motion.button>
+);
 
 export default React.memo(Gallery);

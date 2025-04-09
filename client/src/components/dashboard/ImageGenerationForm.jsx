@@ -39,29 +39,29 @@ const ImageGenerationForm = ({ prompt, setPrompt, credits, generating, generated
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-8"
+      className="mb-4 sm:mb-8 w-full"
     >
-      <h3 className="text-2xl font-semibold text-white mb-4">
+      <h3 className="text-xl sm:text-2xl font-semibold text-white mb-4">
         Generate Image
       </h3>
       <form onSubmit={handleGenerateImage} className="space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <textarea
             value={prompt}
             onChange={handlePromptChange}
             placeholder="Describe the image you want to generate..."
-            className="w-full px-4 py-3 bg-white/5 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
             rows="3"
           />
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleSurpriseMe}
             type="button"
-            className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg text-white/90 hover:text-white flex items-center gap-2"
+            className="flex-shrink-0 px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg text-white/90 hover:text-white flex items-center gap-2 text-sm sm:text-base"
           >
             <Sparkles className="w-4 h-4" />
             Surprise Me
@@ -72,7 +72,7 @@ const ImageGenerationForm = ({ prompt, setPrompt, credits, generating, generated
             whileTap={{ scale: 0.98 }}
             disabled={generating || !prompt.trim() || credits <= 0}
             type="submit"
-            className={`flex-1 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2
+            className={`w-full sm:flex-grow py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 text-sm sm:text-base
               ${generating || !prompt.trim() || credits <= 0
                 ? 'bg-gray-600 cursor-not-allowed'
                 : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'

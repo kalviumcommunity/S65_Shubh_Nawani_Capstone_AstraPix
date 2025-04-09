@@ -18,12 +18,6 @@ const pageTransition = {
   duration: 0.15 // Reduced from 0.2
 };
 
-const backgroundStyle = {
-  backgroundImage: `url(${BackgroundImage})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center'
-};
-
 const AuthPage = () => {
   const { login } = useAuth();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
@@ -110,7 +104,7 @@ const AuthPage = () => {
     setError(null);
 
     try {
-      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/email/verify-otp`, {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/verify-otp`, {
         email: formData.email,
         otp
       });
@@ -132,7 +126,7 @@ const AuthPage = () => {
     setIsSubmitting(true);
     
     try {
-      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/email/send-otp`, {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/send-otp`, {
         email: formData.email
       });
       toast.success('New OTP sent!');
@@ -148,20 +142,23 @@ const AuthPage = () => {
   };
 
   return (
-    <div className={`min-h-screen relative overflow-hidden ${darkMode ? 'dark' : ''}`}>
-      {/* Background with lazy loading */}
-      <div className="fixed inset-0 z-0" style={backgroundStyle}>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background with optimized loading */}
+      <div 
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat" 
+        style={{ backgroundImage: `url(${BackgroundImage})` }}
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-indigo-600/50" />
       </div>
 
-      {/* Theme Toggle */}
+      {/* Theme Toggle - Better touch target */}
       <button
         onClick={toggleTheme}
-        className="fixed top-4 right-4 md:top-6 md:right-6 z-50 p-2 md:p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+        className="fixed top-4 right-4 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors touch-manipulation"
       >
         {darkMode ? 
-          <Sun className="text-white h-4 w-4 md:h-5 md:w-5" /> : 
-          <Moon className="text-white h-4 w-4 md:h-5 md:w-5" />
+          <Sun className="w-5 h-5 text-white" /> : 
+          <Moon className="w-5 h-5 text-white" />
         }
       </button>
 
@@ -170,8 +167,7 @@ const AuthPage = () => {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={pageTransition}
-          className="w-full max-w-md md:max-w-6xl grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl"
+          className="w-full max-w-md sm:max-w-xl md:max-w-6xl grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl"
         >
           <AnimatePresence mode="wait" initial={false}>
             {!showForgotPassword ? (

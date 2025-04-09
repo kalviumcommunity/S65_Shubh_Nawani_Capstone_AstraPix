@@ -12,22 +12,26 @@ const generateOTP = () => crypto.randomInt(100000, 999999).toString();
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: process.env.NODE_ENV === 'production',
+  secure: false, // Force TLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
   tls: {
-    rejectUnauthorized: process.env.NODE_ENV === 'production'
-  }
+    rejectUnauthorized: true,
+    minVersion: "TLSv1.2"
+  },
+  debug: process.env.NODE_ENV === 'development'
 });
 
 // Test email configuration
 const testEmailConfig = async () => {
   try {
     const result = await transporter.verify();
+    console.log('SMTP connection verified successfully');
     return true;
   } catch (error) {
+    console.error('SMTP verification failed:', error);
     return false;
   }
 };
@@ -51,9 +55,16 @@ const sendVerificationEmail = async (email, otp) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
     return true;
   } catch (error) {
+    console.error('Email sending failed:', {
+      error: error.message,
+      stack: error.stack,
+      code: error.code,
+      command: error.command
+    });
     throw error;
   }
 };
@@ -145,7 +156,7 @@ exports.verifyOTP = async (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to verify OTP' 
+      message: error.message
     });
   }
 };

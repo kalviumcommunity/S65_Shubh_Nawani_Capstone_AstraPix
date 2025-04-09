@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Sun, Moon, CreditCard, ChevronDown, LogOut, UserCog, Home, Image, Palette, MessageSquareMore, QrCode } from 'lucide-react';
+import { Sun, Moon, CreditCard, ChevronDown, LogOut, UserCog, Home, Image, Palette, MessageSquareMore, QrCode, X, Menu } from 'lucide-react';
 import Swal from 'sweetalert2';
 import Logo from './Logo';
 import { getInitialAvatar } from '../../utils/avatarUtils';
 import qrCode from '../../assets/AstraPix_QR.jpg'; // Add this import
 import toast from 'react-hot-toast'; // Add this import
 import axios from 'axios';  // Add this import at the top
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, openPaymentModal }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showQRModal, setShowQRModal] = useState(false);
   const { letter, bgColor } = getInitialAvatar(user?.email);
   const [currentUsername, setCurrentUsername] = useState(user?.username || 'User');
+  const { logout } = useAuth();
 
   const handleLogoutClick = () => {
     Swal.fire({
@@ -25,7 +27,6 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Yes, logout',
-      allowOutsideClick: false,  // Add this line
       customClass: {
         popup: 'rounded-lg',
         confirmButton: 'px-4 py-2 rounded-md',
@@ -33,7 +34,18 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        handleLogout();  // Remove the toast and setTimeout here
+        toast.success('Successfully logged out!', {
+          duration: 2000,
+          position: 'top-center',
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        
+        setTimeout(() => {
+          handleLogout();
+        }, 1000);
       }
     });
   };
@@ -80,35 +92,64 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/update-username`, {
-            email: user.email,
-            newUsername: result.value
-          });
+          const response = await axios.post(
+            `${import.meta.env.VITE_BASE_URI}/api/update-username`,
+            {
+              email: user.email,
+              newUsername: result.value
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            }
+          );
 
           if (response.data.success) {
-            // Update local state immediately
+            // Update local state
             setCurrentUsername(result.value);
             
-            // Update localStorage
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            userData.username = result.value;
-            localStorage.setItem('userData', JSON.stringify(userData));
+            try {
+              // Safely update localStorage
+              const storedUserData = localStorage.getItem('userData');
+              if (storedUserData) {
+                const userData = JSON.parse(storedUserData);
+                if (userData) {
+                  userData.username = result.value;
+                  localStorage.setItem('userData', JSON.stringify(userData));
+                }
+              }
 
-            toast.success('Username updated successfully!', {
-              duration: 2000,
-              position: 'top-center',
-              style: { background: '#333', color: '#fff' },
-            });
+              toast.success('Username updated successfully!', {
+                duration: 2000,
+                position: 'top-center',
+                style: { background: '#333', color: '#fff' },
+              });
 
-            // Close dropdown
-            setShowDropdown(false);
+              // Close dropdown first
+              setShowDropdown(false);
+
+              // Then fetch updated data
+              await fetchUpdatedUserData();
+            } catch (storageError) {
+              console.error('Error updating local storage:', storageError);
+              // Continue execution even if localStorage update fails
+            }
+          } else {
+            throw new Error(response.data.message || 'Failed to update username');
           }
         } catch (error) {
-          toast.error(error.response?.data?.message || 'Failed to update username', {
-            duration: 2000,
-            position: 'top-center',
-            style: { background: '#333', color: '#fff' },
-          });
+          console.error('Username update error:', error);
+          toast.error(
+            error.response?.data?.message || 
+            error.message || 
+            'Failed to update username. Please try again.',
+            {
+              duration: 3000,
+              position: 'top-center',
+              style: { background: '#333', color: '#fff' },
+            }
+          );
         }
       }
     });
@@ -144,21 +185,21 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
   };
 
   return (
-    <nav className="bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50 transition-all duration-300 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <nav className="sticky top-0 z-50 bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-lg border-b border-white/10 shadow-lg">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="p-1 bg-white/10 rounded-lg">
-              <Logo className="w-6 h-6 object-contain" />
+              <Logo className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
-            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+            <span className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
               AstraPix
-            </h1>
+            </span>
           </div>
 
-          {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex items-center space-x-6">
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
             <a href="/" className="text-white/80 hover:text-white flex items-center space-x-1 group">
               <Home className="w-4 h-4" />
               <span>Home</span>
@@ -173,25 +214,24 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
             </a>
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="sm:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white transition-all duration-200 hover:scale-105"
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? 'Close' : 'Menu'}
-          </button>
-
-          {/* Right Side Navigation Items */}
-          <div className={`flex-col sm:flex-row sm:flex items-center space-y-4 sm:space-y-0 sm:space-x-6 ${isMenuOpen ? 'flex' : 'hidden'} sm:flex`}>
-            {/* Credits Button */}
+          {/* Right Side Items */}
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Credits Button - Mobile Optimized */}
             <button
               onClick={openPaymentModal}
-              className="flex items-center space-x-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base hover:scale-105"
-              title="Purchase Credits"
+              className="hidden sm:flex items-center space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg text-white text-sm sm:text-base transition-all hover:scale-105"
             >
               <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Credits: {loading ? '...' : credits}</span>
+            </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
             {/* User Profile Dropdown */}
@@ -223,12 +263,12 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
                 <ChevronDown className="w-4 h-4 text-white/60" />
               </button>
 
-              {/* Dropdown Menu */}
+              {/* Mobile-Friendly Dropdown Menu */}
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg py-2 z-50 border border-white/10">
+                <div className="absolute right-0 mt-2 w-48 sm:w-56 bg-gray-800 rounded-lg shadow-xl py-2 z-50 border border-white/10">
                   <button
                     onClick={handleEditUsername}
-                    className="w-full px-4 py-2 text-left text-white/90 hover:bg-white/10 flex items-center space-x-2"
+                    className="w-full px-4 py-3 text-left text-white/90 hover:bg-white/10 flex items-center space-x-2"
                   >
                     <UserCog className="w-4 h-4" />
                     <span>Edit Username</span>
@@ -262,27 +302,42 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
               )}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Mobile Menu Items */}
-          {isMenuOpen && (
-            <div className="md:hidden fixed inset-x-0 top-16 bg-gray-800/95 backdrop-blur-md p-4 space-y-3">
-              <a href="/" className="block text-white/80 hover:text-white py-2 flex items-center space-x-2">
-                <Home className="w-4 h-4" />
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-40 bg-gray-900/95">
+          <div className="flex flex-col h-full pt-16 pb-6 px-4">
+            <div className="flex-1 overflow-y-auto space-y-2">
+              {/* Mobile Navigation Items */}
+              <a href="/" className="block py-3 px-4 text-white/90 hover:bg-white/5 rounded-lg flex items-center space-x-3">
+                <Home className="w-5 h-5" />
                 <span>Home</span>
               </a>
-              <a href="/gallery" className="block text-white/80 hover:text-white py-2 flex items-center space-x-2">
-                <Image className="w-4 h-4" />
+              <a href="/gallery" className="block py-3 px-4 text-white/90 hover:bg-white/5 rounded-lg flex items-center space-x-3">
+                <Image className="w-5 h-5" />
                 <span>Gallery</span>
               </a>
-              <a href="/generate" className="block text-white/80 hover:text-white py-2 flex items-center space-x-2">
-                <Palette className="w-4 h-4" />
+              <a href="/generate" className="block py-3 px-4 text-white/90 hover:bg-white/5 rounded-lg flex items-center space-x-3">
+                <Palette className="w-5 h-5" />
                 <span>Create</span>
               </a>
             </div>
-          )}
-          
+
+            {/* Mobile Bottom Actions */}
+            <div className="pt-4 border-t border-white/10 space-y-2">
+              <button
+                onClick={openPaymentModal}
+                className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-white flex items-center justify-center space-x-2"
+              >
+                <CreditCard className="w-5 h-5" />
+                <span>Credits: {loading ? '...' : credits}</span>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };

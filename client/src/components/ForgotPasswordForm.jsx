@@ -23,7 +23,7 @@ const ForgotPasswordForm = ({ onBack }) => {
     setIsSubmitting(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_BASE_URI}/api/email/forgot-password`, 
+        `${import.meta.env.VITE_BASE_URI}/api/forgot-password`, 
         { email },
         { timeout: 8000 }
       );
@@ -40,7 +40,7 @@ const ForgotPasswordForm = ({ onBack }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/email/verify-otp`, {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/verify-otp`, {
         email,
         otp,
         newPassword

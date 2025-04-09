@@ -19,10 +19,20 @@ export const ThemeProvider = ({ children }) => {
     setDarkMode(prev => !prev);
   };
 
-  // Define default logo sizes
+  // Define responsive logo sizes
   const logoSize = {
-    height: '64px',
-    width: '64px'
+    sm: {
+      height: '48px',
+      width: '48px'
+    },
+    md: {
+      height: '64px',
+      width: '64px'
+    },
+    lg: {
+      height: '96px',
+      width: '96px'
+    }
   };
 
   return (

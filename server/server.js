@@ -13,7 +13,7 @@ const creditRoute = require('./routes/creditRoute');
 const imageRoute = require('./routes/imageRoute');
 const profileRoute = require('./routes/profileRoute');
 const path = require('path');
-
+const validateEmailConfig = require('./config/emailConfig');
 
 require('./config/passport');
 
@@ -78,14 +78,14 @@ app.use(express.json());
 app.use(passport.initialize());
 
 // Apply rate limiting before routes
-app.use('/api/users/login', authLimiter);
-app.use('/api/users/signup', authLimiter);
-app.use('/auth', authLimiter);
-app.use('/generate/generate', imageLimiter);
-app.use('/api', apiLimiter);  // General API rate limiting
+// app.use('/api/users/login', authLimiter);
+// app.use('/api/users/signup', authLimiter);
+// app.use('/auth', authLimiter);
+// app.use('/generate/generate', imageLimiter);
+// app.use('/api', apiLimiter);  // General API rate limiting
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/api/email', emailVerificationRoute);
+app.use('/api', emailVerificationRoute);
 app.use('/auth', authRoute);
 app.use('/api', userRoute); // This will handle forgot password routes
 app.use('/check', creditRoute);
@@ -110,7 +110,7 @@ const PORT = process.env.PORT || 4000;
 
 app.get("/", (req, res) => {
   try {
-    return res.status(200).json({message: "Backend API is up & running..."})
+    return res.status(200).json({message: "AstraPix API is up & running..."})
   } catch (err) {
     return res.status(500).json({error: err.message})
   }
@@ -150,3 +150,15 @@ process.on('unhandledRejection', (err) => {
 
 // Initialize DB on startup
 getDbConnection().catch(console.error);
+
+const startServer = async () => {
+  try {
+    validateEmailConfig();
+    // ...existing code...
+  } catch (error) {
+    console.error('Server startup failed:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
