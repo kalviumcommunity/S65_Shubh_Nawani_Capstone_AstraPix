@@ -243,58 +243,60 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/70 z-30 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/70 z-30 flex items-center justify-center p-4 sm:p-6"
       onClick={() => setFullscreenImage(null)}
     >
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="relative max-w-2xl w-full mx-auto"
+        className="relative max-w-xl w-full mx-auto"
         onClick={e => e.stopPropagation()}
       >
-        {/* Close button - Moved outside image container */}
+        {/* Close button */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           onClick={() => setFullscreenImage(null)}
-          className="absolute -top-10 right-0 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white"
+          className="absolute -top-8 right-0 p-1.5 bg-white/10 hover:bg-white/20 rounded-full text-white"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </motion.button>
 
         <div className="bg-gray-900/90 rounded-lg overflow-hidden backdrop-blur-sm">
-          <img
-            src={image.imageUrl}
-            alt={image.prompt}
-            className="w-full h-auto rounded-t-lg"
-          />
+          <div className="max-h-[70vh] overflow-hidden">
+            <img
+              src={image.imageUrl}
+              alt={image.prompt}
+              className="w-full h-auto object-contain"
+            />
+          </div>
           
-          <div className="p-4 border-t border-white/10">
-            <p className="text-white/90 text-sm mb-3">{image.prompt}</p>
-            <div className="flex items-center justify-center gap-4">
+          <div className="p-3 border-t border-white/10">
+            <p className="text-white/90 text-xs mb-2 line-clamp-2">{image.prompt}</p>
+            <div className="flex items-center justify-center gap-3">
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={() => handleDownload(image)}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+                className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full"
               >
-                <Download className="w-4 h-4 text-white" />
+                <Download className="w-3.5 h-3.5 text-white" />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={() => handleShare(image)}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+                className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full"
               >
-                <Share2 className="w-4 h-4 text-white" />
+                <Share2 className="w-3.5 h-3.5 text-white" />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={() => {
                   handleDelete(image._id);
                   setFullscreenImage(null);
                 }}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+                className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full"
               >
-                <Trash2 className="w-4 h-4 text-red-400" />
+                <Trash2 className="w-3.5 h-3.5 text-red-400" />
               </motion.button>
             </div>
           </div>

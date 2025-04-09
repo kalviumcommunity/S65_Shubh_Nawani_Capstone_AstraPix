@@ -58,14 +58,17 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
       if (response.data.success) {
         const updatedUser = response.data.user;
         localStorage.setItem('userData', JSON.stringify(updatedUser));
-        window.location.reload(); // Force reload to update all components
+        // Remove toast from here since we'll handle it in handleEditUsername
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000); // Increased delay to 2000ms
       }
     } catch (error) {
       console.error('Failed to fetch updated user data:', error);
     }
   };
 
-  const handleEditUsername = () => {
+  const handleEditUsername = async () => {
     Swal.fire({
       title: 'Edit Username',
       input: 'text',
@@ -106,35 +109,23 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
           );
 
           if (response.data.success) {
+            // Close dropdown first
+            setShowDropdown(false);
+            
             // Update local state
             setCurrentUsername(result.value);
             
-            try {
-              // Safely update localStorage
-              const storedUserData = localStorage.getItem('userData');
-              if (storedUserData) {
-                const userData = JSON.parse(storedUserData);
-                if (userData) {
-                  userData.username = result.value;
-                  localStorage.setItem('userData', JSON.stringify(userData));
-                }
-              }
+            // Show toast before fetching updated data
+            toast.success('Username updated successfully!', {
+              duration: 3000,
+              position: 'top-center',
+              style: { background: '#333', color: '#fff' },
+            });
 
-              toast.success('Username updated successfully!', {
-                duration: 2000,
-                position: 'top-center',
-                style: { background: '#333', color: '#fff' },
-              });
-
-              // Close dropdown first
-              setShowDropdown(false);
-
-              // Then fetch updated data
+            // Wait a bit before fetching updated data
+            setTimeout(async () => {
               await fetchUpdatedUserData();
-            } catch (storageError) {
-              console.error('Error updating local storage:', storageError);
-              // Continue execution even if localStorage update fails
-            }
+            }, 500);
           } else {
             throw new Error(response.data.message || 'Failed to update username');
           }
