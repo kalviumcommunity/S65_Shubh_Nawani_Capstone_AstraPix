@@ -335,17 +335,20 @@ const Gallery = ({ showHeaderFooter = true, isMinimal = false }) => {
   return (
     <>
       {showHeaderFooter && (
-        <Navbar 
-          user={user}
-          credits={credits}
-          loading={loading}
-          darkMode={darkMode}
-          toggleTheme={toggleTheme}
-          handleLogout={handleLogout}
-          openPaymentModal={() => setIsPaymentModalOpen(true)}
-        />
+        <div className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-gray-900/80 border-b border-white/10 shadow-lg">
+          <Navbar 
+            user={user}
+            credits={credits}
+            loading={loading}
+            darkMode={darkMode}
+            toggleTheme={toggleTheme}
+            handleLogout={handleLogout}
+            openPaymentModal={() => setIsPaymentModalOpen(true)}
+          />
+        </div>
       )}
-      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
+      {/* Add padding-top to compensate for fixed navbar */}
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8 pt-20">
         <div className="max-w-[1600px] mx-auto"> {/* Increased max width */}
           {!isMinimal && (
             <motion.div 

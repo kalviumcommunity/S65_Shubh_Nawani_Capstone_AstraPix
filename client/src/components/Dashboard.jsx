@@ -37,7 +37,6 @@ const Dashboard = () => {
   const [userImages, setUserImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [recentImages, setRecentImages] = useState([]);
 
   // Memoized API headers
   const authHeaders = useMemo(() => ({
@@ -86,21 +85,6 @@ const Dashboard = () => {
       setIsInitializing(false);
     }, 800);
     return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const fetchRecentImages = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_BASE_URI}/generate/gallery`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setRecentImages((response.data.images || []).slice(0, 3));
-      } catch (error) {
-        console.error('Failed to fetch recent images');
-      }
-    };
-
-    fetchRecentImages();
   }, []);
 
   // Handlers
@@ -269,12 +253,13 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col relative bg-gradient-to-br from-gray-900 to-purple-900">
       <Toaster position="top-right" />
       
-      {/* Remove background image and use simpler gradient */}
-      <div className="fixed inset-0 z-0 opacity-50" />
+      {/* Changed from sticky to fixed positioning */}
+      <div className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-gray-900/80 border-b border-white/10 shadow-lg">
+        {memoizedNav}
+      </div>
 
-      {memoizedNav}
-
-      <main className="flex-grow relative z-10">
+      {/* Add padding-top to main content to prevent overlap with fixed navbar */}
+      <main className="flex-grow relative z-10 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-8">
             {/* Simplified card backgrounds */}
