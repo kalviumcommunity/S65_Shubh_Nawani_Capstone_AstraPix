@@ -76,6 +76,7 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
       );
 
       if (response.data.success) {
+
         // Update local state
         setCurrentUsername(newUsername);
         setAvatarInfo(getInitialAvatar(newUsername));
@@ -94,6 +95,14 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
         return true;
       } else {
         throw new Error(response.data.message || 'Failed to update username');
+
+        const updatedUser = response.data.user;
+        localStorage.setItem('userData', JSON.stringify(updatedUser));
+        // Remove toast from here since we'll handle it in handleEditUsername
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000); // Increased delay to 2000ms
+
       }
     } catch (error) {
       console.error('Username update error:', error);
@@ -102,7 +111,7 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
     }
   };
 
-  const handleEditUsername = () => {
+  const handleEditUsername = async () => {
     Swal.fire({
       title: 'Edit Username',
       input: 'text',
@@ -127,8 +136,60 @@ const Navbar = ({ darkMode, toggleTheme, credits, loading, user, handleLogout, o
         if (value.length < 3) return 'Username must be at least 3 characters long!';
       }
     }).then(async (result) => {
+
       if (result.isConfirmed && result.value) {
         await updateUsername(result.value);
+
+      if (result.isConfirmed) {
+        try {
+          const response = await axios.post(
+            `${import.meta.env.VITE_BASE_URI}/api/update-username`,
+            {
+              email: user.email,
+              newUsername: result.value
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            }
+          );
+
+          if (response.data.success) {
+            // Close dropdown first
+            setShowDropdown(false);
+            
+            // Update local state
+            setCurrentUsername(result.value);
+            
+            // Show toast before fetching updated data
+            toast.success('Username updated successfully!', {
+              duration: 3000,
+              position: 'top-center',
+              style: { background: '#333', color: '#fff' },
+            });
+
+            // Wait a bit before fetching updated data
+            setTimeout(async () => {
+              await fetchUpdatedUserData();
+            }, 500);
+          } else {
+            throw new Error(response.data.message || 'Failed to update username');
+          }
+        } catch (error) {
+          console.error('Username update error:', error);
+          toast.error(
+            error.response?.data?.message || 
+            error.message || 
+            'Failed to update username. Please try again.',
+            {
+              duration: 3000,
+              position: 'top-center',
+              style: { background: '#333', color: '#fff' },
+            }
+          );
+        }
+
       }
     });
   };

@@ -69,9 +69,48 @@ const sendVerificationEmail = async (email, otp) => {
   }
 };
 
+const sendForgotPasswordEmail = async (email, otp) => {
+  try {
+    const mailOptions = {
+      from: `"AstraPix" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Reset Your Password - AstraPix',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #6b46c1;">Reset Your Password</h2>
+          <p>Your password reset code is:</p>
+          <h1 style="color: #4c1d95; letter-spacing: 5px;">${otp}</h1>
+          <p>Code expires in 10 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Password reset email sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Password reset email failed:', error);
+    throw error;
+  }
+};
+
+const debugOtpStore = () => {
+  console.log('Current OTP Store State:', {
+    size: otpStore.size,
+    entries: Array.from(otpStore.entries()).map(([email, data]) => ({
+      email,
+      otp: data.otp,
+      type: data.type,
+      expiry: new Date(data.expiry).toISOString()
+    }))
+  });
+};
+
 exports.sendOTP = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, type = 'verification' } = req.body;
+    console.log('Sending OTP Request:', { email, type });
     
     if (!email) {
       return res.status(400).json({
@@ -80,40 +119,80 @@ exports.sendOTP = async (req, res) => {
       });
     }
 
-    // Check if email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email already registered' 
-      });
+    // Different validation for verification vs forgot password
+    if (type === 'verification') {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email already registered' 
+        });
+      }
+    } else if (type === 'forgot-password') {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'No account found with this email'
+        });
+      }
     }
 
     const otp = generateOTP();
-    
-    // Store OTP with expiration from env
-    otpStore.set(email, {
-      otp,
-      expiry: Date.now() + parseInt(process.env.OTP_EXPIRE_TIME)
+    console.log('Generated new OTP:', { email, otp });
+
+    // Clear any existing OTP for this email
+    if (otpStore.has(email)) {
+      console.log('Clearing existing OTP for:', email);
+      otpStore.delete(email);
+    }
+
+    const otpData = {
+      otp: otp.toString(), // Ensure OTP is stored as string
+      expiry: Date.now() + parseInt(process.env.OTP_EXPIRE_TIME || '600000'),
+      type: type
+    };
+
+    // Store new OTP data
+    otpStore.set(email, otpData);
+    console.log('Stored new OTP data:', { email, ...otpData });
+
+    // Verify storage
+    const verification = otpStore.get(email);
+    console.log('Storage verification:', {
+      email,
+      stored: !!verification,
+      data: verification
     });
 
-    await sendVerificationEmail(email, otp);
+    debugOtpStore();
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'OTP sent successfully' 
+    // Send appropriate email
+    if (type === 'forgot-password') {
+      await sendForgotPasswordEmail(email, otp);
+    } else {
+      await sendVerificationEmail(email, otp);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent successfully'
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to send OTP' 
+    console.error('Send OTP Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send OTP'
     });
   }
 };
 
 exports.verifyOTP = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, newPassword, type = 'verification' } = req.body;
+    console.log('Verify OTP Request:', { email, otp, type });
+
+    debugOtpStore();
 
     if (!email || !otp) {
       return res.status(400).json({
@@ -123,47 +202,111 @@ exports.verifyOTP = async (req, res) => {
     }
 
     const storedData = otpStore.get(email);
+    console.log('OTP Verification Check:', {
+      email,
+      providedOtp: otp,
+      storedData: storedData,
+      matches: storedData?.otp === otp
+    });
+
+    // Dump entire OTP store for debugging
+    console.log('Current OTP Store:', {
+      size: otpStore.size,
+      keys: Array.from(otpStore.keys()),
+      hasEmail: otpStore.has(email)
+    });
+
+    // Detailed logging
+    console.log('Stored OTP data for email:', email, storedData);
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and OTP are required'
+      });
+    }
+
+    console.log('Stored OTP data:', {
+      exists: !!storedData,
+      storedOtp: storedData?.otp,
+      storedType: storedData?.type,
+      isExpired: storedData ? Date.now() > storedData.expiry : true,
+      receivedOtp: otp
+    });
 
     if (!storedData) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'OTP expired or not found' 
+      return res.status(400).json({
+        success: false,
+        message: 'No OTP found for this email'
       });
     }
 
+    // Check expiry
     if (Date.now() > storedData.expiry) {
-      otpStore.delete(email);
-      return res.status(400).json({ 
-        success: false, 
-        message: 'OTP expired' 
+      otpStore.delete(email); // Clean up expired OTP
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired'
       });
     }
 
-    if (storedData.otp !== otp) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid OTP' 
+    // Verify OTP type matches
+    if (storedData.type !== type) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP type'
       });
+    }
+
+    // Compare OTP
+    if (storedData.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP'
+      });
+    }
+
+    // Handle password reset
+    if (type === 'forgot-password') {
+      if (!newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password is required'
+        });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      user.password = newPassword;
+      await user.save();
     }
 
     // Clear OTP after successful verification
     otpStore.delete(email);
+    console.log('OTP verified successfully for:', email);
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Email verified successfully' 
+    res.status(200).json({
+      success: true,
+      message: type === 'forgot-password' ? 'Password updated successfully' : 'Email verified successfully'
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message
+    console.error('Verify OTP Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Verification failed'
     });
   }
 };
 
 exports.resendOTP = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, type = 'verification' } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -174,11 +317,14 @@ exports.resendOTP = async (req, res) => {
 
     const otp = generateOTP();
     
-    // Store new OTP
-    otpStore.set(email, {
-      otp,
-      expiry: Date.now() + 600000
-    });
+    const otpData = {
+      otp: otp.toString(),
+      expiry: Date.now() + parseInt(process.env.OTP_EXPIRE_TIME || '600000'),
+      type: type
+    };
+
+    otpStore.set(email, otpData);
+    debugOtpStore();
 
     await sendVerificationEmail(email, otp);
 

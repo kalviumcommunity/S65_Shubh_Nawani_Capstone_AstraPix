@@ -1,5 +1,9 @@
-### Frontend Deployed Link: https://client-omega-lovat.vercel.app/
-### Backend Deployed Link: https://s65-shubh-nawani-capstone-astrapix.onrender.com/
+<div align="center">
+    <br>
+    <img src="./client/src/assets/AstraPix_Logo_Dark.jpg" alt="AstraPix_Logo_Dark" width="120" />
+    <br>
+</div>
+
 
 # AstraPix
 
@@ -144,6 +148,8 @@ Buffer days to address unexpected bugs, delays, or additional features that may 
 ---
 
 ### Design Link: https://www.figma.com/design/8VP0YVUTy7i6YuY2M5SNFj/AstraPix_High_Fid?node-id=0-1&t=JNINPR2wdXlcTqQn-1
+
+### End State Link: https://astrapix.vercel.app
 
 ## Contact
 For any queries or collaborations, reach out via GitHub Issues or email at **shubhnawani@outlook.com**.
