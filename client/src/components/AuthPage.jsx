@@ -34,6 +34,45 @@ const AuthPage = () => {
   // Add a ref to track submission to prevent duplicate requests
   const isSubmittingRef = useRef(false);
 
+  // Theme-aware styles
+  const themeStyles = {
+    // Background overlay
+    bgOverlay: darkMode 
+      ? 'bg-gradient-to-br from-purple-900/50 to-indigo-600/50'
+      : 'bg-gradient-to-br from-purple-100/70 to-indigo-100/70',
+    
+    // Main container background
+    containerBg: darkMode
+      ? 'bg-white/10 backdrop-blur-md'
+      : 'bg-white/80 backdrop-blur-md',
+    
+    // Welcome panel background
+    welcomePanelBg: darkMode
+      ? 'bg-gradient-to-br from-purple-600/20 to-indigo-600/20'
+      : 'bg-gradient-to-br from-purple-200/60 to-indigo-200/60',
+    
+    // Text colors
+    primaryText: darkMode ? 'text-white' : 'text-gray-800',
+    secondaryText: darkMode ? 'text-white/80' : 'text-gray-600',
+    
+    // Button styles
+    primaryButton: darkMode
+      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+      : 'bg-purple-500 hover:bg-purple-600 text-white',
+    
+    outlineButton: darkMode
+      ? 'border-white/50 text-white hover:bg-white/10'
+      : 'border-gray-600/50 text-gray-700 hover:bg-gray-100/50',
+    
+    // Theme toggle button
+    themeToggle: darkMode
+      ? 'bg-white/10 hover:bg-white/20'
+      : 'bg-black/10 hover:bg-black/20',
+    
+    // Theme toggle icon
+    themeIcon: darkMode ? 'text-white' : 'text-gray-800'
+  };
+
   // Optimize form reset with proper dependency
   const handleToggle = useCallback(() => {
     setIsLogin(!isLogin);
@@ -77,8 +116,8 @@ const AuthPage = () => {
           duration: 5000,
           position: 'top-center',
           style: {
-            background: '#333',
-            color: '#fff',
+            background: darkMode ? '#333' : '#fff',
+            color: darkMode ? '#fff' : '#333',
           },
         });
       } else {
@@ -87,8 +126,8 @@ const AuthPage = () => {
           duration: 5000,
           position: 'top-center',
           style: {
-            background: '#333',
-            color: '#fff',
+            background: darkMode ? '#333' : '#fff',
+            color: darkMode ? '#fff' : '#333',
           },
         });
         navigate('/dashboard');
@@ -97,12 +136,17 @@ const AuthPage = () => {
       const errorMessage = err.response?.data?.message || 
                           (err.code === 'ECONNABORTED' ? 'Request timed out' : 'Something went wrong');
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
     } finally {
       setIsSubmitting(false);
       isSubmittingRef.current = false;
     }
-  }, [isLogin, formData, login, navigate]);
+  }, [isLogin, formData, login, navigate, darkMode]);
 
   const handleVerifyOTP = useCallback(async (e) => {
     e.preventDefault();
@@ -120,18 +164,28 @@ const AuthPage = () => {
 
       const response = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/signup`, formData);
       login(response.data.token, response.data.user);
-      toast.success('Account created successfully!');
+      toast.success('Account created successfully!', {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
       navigate('/dashboard');
     } catch (err) {
       const errorMessage = err.response?.data?.message || 
                           (err.code === 'ECONNABORTED' ? 'Request timed out' : 'Something went wrong');
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
     } finally {
       setIsSubmitting(false);
       isSubmittingRef.current = false;
     }
-  }, [formData, otp, login, navigate]);
+  }, [formData, otp, login, navigate, darkMode]);
 
   const resendOTP = useCallback(async () => {
     if (isSubmitting || isSubmittingRef.current) return;
@@ -143,14 +197,24 @@ const AuthPage = () => {
       await axios.post(`${import.meta.env.VITE_BASE_URI}/api/send-otp`, {
         email: formData.email
       });
-      toast.success('New OTP sent!');
+      toast.success('New OTP sent!', {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
     } catch (err) {
-      toast.error('Failed to send OTP');
+      toast.error('Failed to send OTP', {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
     } finally {
       setIsSubmitting(false);
       isSubmittingRef.current = false;
     }
-  }, [formData.email, isSubmitting]);
+  }, [formData.email, isSubmitting, darkMode]);
 
   const handleForgotPassword = useCallback(() => {
     setShowForgotPassword(true);
@@ -162,10 +226,10 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden overscroll-none">
-      {/* Back to Landing button with improved visibility */}
+      {/* Back to Landing button with theme-aware styling */}
       <button
         onClick={() => navigate('/')}
-        className="fixed top-4 left-4 z-50 px-6 py-3 rounded-full bg-purple-600 hover:bg-purple-700 transition-all text-white flex items-center gap-2 touch-manipulation font-semibold shadow-lg"
+        className={`fixed top-4 left-4 z-50 px-6 py-3 rounded-full ${themeStyles.primaryButton} transition-all flex items-center gap-2 touch-manipulation font-semibold shadow-lg`}
       >
         <span className="text-lg">←</span>
         <span>Return to Landing</span>
@@ -176,18 +240,18 @@ const AuthPage = () => {
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${BackgroundImage})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-indigo-600/50" />
+        <div className={`absolute inset-0 ${themeStyles.bgOverlay}`} />
       </div>
 
-      {/* Theme Toggle - Better touch target */}
+      {/* Theme Toggle - Better touch target with theme-aware colors */}
       <button
         onClick={toggleTheme}
-        className="fixed top-4 right-4 z-50 p-2 sm:p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors touch-manipulation"
+        className={`fixed top-4 right-4 z-50 p-2 sm:p-3 rounded-full ${themeStyles.themeToggle} transition-colors touch-manipulation`}
         aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
       >
         {darkMode ? 
-          <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : 
-          <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <Sun className={`w-4 h-4 sm:w-5 sm:h-5 ${themeStyles.themeIcon}`} /> : 
+          <Moon className={`w-4 h-4 sm:w-5 sm:h-5 ${themeStyles.themeIcon}`} />
         }
       </button>
 
@@ -197,7 +261,7 @@ const AuthPage = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="w-full max-w-sm sm:max-w-xl md:max-w-6xl grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl"
+          className={`w-full max-w-sm sm:max-w-xl md:max-w-6xl grid grid-cols-1 md:grid-cols-2 ${themeStyles.containerBg} rounded-2xl overflow-hidden shadow-2xl`}
         >
           <AnimatePresence mode="wait" initial={false}>
             {!showForgotPassword ? (
@@ -211,21 +275,21 @@ const AuthPage = () => {
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: 50, opacity: 0 }}
                       transition={pageTransition}
-                      className="p-4 sm:p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
+                      className={`p-4 sm:p-6 md:p-12 ${themeStyles.welcomePanelBg}`}
                     >
                       <Logo className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mb-4 sm:mb-6 md:mb-8" />
                       <div className="space-y-3 sm:space-y-4 md:space-y-6">
-                        <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-white">
+                        <h1 className={`text-xl sm:text-2xl md:text-4xl font-bold ${themeStyles.primaryText}`}>
                           Welcome Back!
                         </h1>
-                        <p className="text-white/80 text-xs sm:text-sm md:text-lg max-w-sm">
+                        <p className={`${themeStyles.secondaryText} text-xs sm:text-sm md:text-lg max-w-sm`}>
                           Sign in to continue your creative journey with AstraPix.
                         </p>
                         <motion.button
                           onClick={handleToggle}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="px-4 sm:px-6 py-1.5 sm:py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all touch-manipulation"
+                          className={`px-4 sm:px-6 py-1.5 sm:py-2 md:px-8 md:py-3 border-2 ${themeStyles.outlineButton} rounded-lg transition-all touch-manipulation`}
                         >
                           Create Account
                         </motion.button>
@@ -280,21 +344,21 @@ const AuthPage = () => {
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: -50, opacity: 0 }}
                       transition={pageTransition}
-                      className="p-6 md:p-12 bg-gradient-to-br from-purple-600/20 to-indigo-600/20"
+                      className={`p-6 md:p-12 ${themeStyles.welcomePanelBg}`}
                     >
                       <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
                       <div className="space-y-4 md:space-y-6">
-                        <h1 className="text-2xl md:text-4xl font-bold text-white">
+                        <h1 className={`text-2xl md:text-4xl font-bold ${themeStyles.primaryText}`}>
                           Start Your Journey
                         </h1>
-                        <p className="text-white/80 text-sm md:text-lg max-w-sm">
+                        <p className={`${themeStyles.secondaryText} text-sm md:text-lg max-w-sm`}>
                           Already have an account? Sign in to continue your journey.
                         </p>
                         <motion.button
                           onClick={handleToggle}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="px-6 py-2 md:px-8 md:py-3 border-2 border-white/50 text-white rounded-lg hover:bg-white/10 transition-all"
+                          className={`px-6 py-2 md:px-8 md:py-3 border-2 ${themeStyles.outlineButton} rounded-lg transition-all`}
                         >
                           Sign In
                         </motion.button>
