@@ -140,6 +140,7 @@ Buffer days to address unexpected bugs, delays, or additional features that may 
 
 ## Contributors
 - **Shubh Nawani** - Lead Developer & Architect
+- **Arman Kar** - Website Performance Intern
 - Open to contributions! Feel free to submit PRs.
 
 ---
