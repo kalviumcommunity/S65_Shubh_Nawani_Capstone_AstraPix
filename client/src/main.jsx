@@ -1,9 +1,13 @@
-import React from 'react';
+import { scan } from "react-scan"; // must be imported before React and React DOM
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
+
+scan({
+  enabled: true,
+});
 
 // Create a client
 const queryClient = new QueryClient({

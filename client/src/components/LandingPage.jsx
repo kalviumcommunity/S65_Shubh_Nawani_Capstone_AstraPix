@@ -458,19 +458,35 @@ const LandingPage = () => {
         <div className="pt-16 sm:pt-20 space-y-16 sm:space-y-24 md:space-y-32 pb-16">
           <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center">
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-              <div className="text-center">
+              {/* Blurred Card Background */}
+              <div
+                className="
+                  absolute inset-0
+                  bg-white/10
+                  backdrop-blur-lg
+                  rounded-3xl
+                  shadow-xl
+                  z-0
+                "
+                aria-hidden="true"
+              ></div>
+
+              {/* Hero Content */}
+              <div className="relative z-10 text-center">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, type: "spring" }}
                   className="space-y-2 sm:space-y-4 mb-8 sm:mb-12"
                 >
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-bold">
+                  <h1 className="text-xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-9xl font-serif relative">
+                    {/* Blurred background just for the heading */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 blur-xl rounded-3xl -z-10"></div>
                     <span className="block text-white mb-1 sm:mb-2 md:mb-4 transition-colors duration-300">
                       Unleash Your
                     </span>
-                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 transition-all duration-300">
-                      Creative Vision
+                    <span className="block text-transparent bg-clip-text bg-white transition-all duration-300">
+                      Creative <em>Vision</em>
                     </span>
                   </h1>
                 </motion.div>
@@ -479,15 +495,10 @@ const LandingPage = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="max-w-2xl mx-auto text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed mb-8 sm:mb-12 px-4 space-y-2 sm:space-y-4"
+                  className="max-w-2xl mx-auto text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed mb-2 sm:mb-12 px-4 space-y-2 sm:space-y-4"
                 >
-                  <span className="block mb-2 sm:mb-4">
-                    Transform your ideas into stunning visuals with our
-                    <span className="text-purple-400 font-medium">
-                      {" "}
-                      AI-powered platform
-                    </span>
-                    .
+                  <span className="block">
+                    Transform your ideas into stunning visuals with our AI-powered platform.
                   </span>
                   <span className="block">
                     Create unique, professional-grade artwork that captivates.
@@ -502,14 +513,14 @@ const LandingPage = () => {
                 >
                   <button
                     onClick={() => navigate("/auth")}
-                    className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium flex items-center justify-center space-x-2 group transform hover:scale-105 transition-all duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black"
+                    className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium flex items-center justify-center space-x-2 group transform hover:scale-105 transition-all duration-300 shadow-md"
                   >
                     <span className="text-base sm:text-lg">Start Creating</span>
                     <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                   <button
                     onClick={() => navigate("/gallery")}
-                    className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transform hover:scale-105 transition-all duration-300 border border-white/20 hover:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-black"
+                    className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-white bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transform hover:scale-105 transition-all duration-300 hover:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-black"
                   >
                     <span className="text-base sm:text-lg">View Gallery</span>
                   </button>
@@ -523,180 +534,57 @@ const LandingPage = () => {
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
                 How It Works
               </h2>
-              <p className="text-base sm:text-lg text-gray-300 max-w-3xl mx-auto">
-                Create stunning visuals in just a few simple steps
+              <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+                Follow these simple steps to create stunning images with AstraPix:
               </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 lg:gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               {workflowSteps.map((step) => (
                 <div
                   key={step.title}
-                  className="bg-black/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 md:p-8 border border-white/10 hover:bg-black/50 transition-all group"
+                  className="bg-black/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 transition-all group hover:border-purple-400/30"
                 >
-                  <div className="flex flex-col space-y-4 sm:space-y-6">
-                    <div className="flex items-start space-x-3 sm:space-x-6">
-                      <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-purple-500/10 flex items-center justify-center transform-gpu group-hover:scale-110 transition-transform duration-300">
+                  <div className="flex items-center mb-3 sm:mb-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-500 mr-3">
                         {step.icon}
                       </div>
-                      <div className="flex-grow">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
-                          {step.title}
-                        </h3>
-                        <p className="text-sm sm:text-base text-gray-300 mb-3 sm:mb-4 group-hover:text-gray-200 transition-colors">
-                          {step.description}
-                        </p>
-                        <div className="flex flex-wrap gap-1 sm:gap-2">
-                          {step.subpoints.map((point, index) => (
-                            <span
-                              key={index}
-                              className="px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-500/10 rounded-full text-xs sm:text-sm text-purple-300 border border-purple-500/20"
-                            >
-                              {point}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                      {step.demoImages.map((demo, index) => (
-                        <div
-                          key={index}
-                          className="relative rounded-lg overflow-hidden group-hover:shadow-md transition-shadow duration-300"
-                        >
-                          <img
-                            src={demo.src}
-                            alt={demo.caption}
-                            className="w-full h-32 sm:h-48 object-cover object-center transform group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
-                            width="800"
-                            height="600"
-                            fetchpriority="low"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-                          <span className="absolute bottom-2 left-2 text-xs sm:text-sm text-white/90 font-medium">
-                            {demo.caption}
-                          </span>
-                        </div>
-                      ))}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-white truncate">
+                        {step.title}
+                      </h3>
+                      <p className="text-sm text-gray-300 mt-0.5">
+                        {step.description}
+                      </p>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-6">
-                Choose Your Plan
-              </h2>
-              <p className="text-base sm:text-xl text-gray-300 max-w-3xl mx-auto">
-                Select the perfect plan for your creative needs
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-              {pricingPlans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`bg-black/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 md:p-8 border ${
-                    plan.popular
-                      ? "border-purple-500"
-                      : plan.badge === "Best Value"
-                      ? "border-pink-500"
-                      : "border-white/10"
-                  } relative hover:bg-black/50 transition-all flex flex-col`}
-                >
-                  {plan.badge && (
-                    <div
-                      className={`absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 ${
-                        plan.badge === "Most Popular"
-                          ? "bg-purple-500"
-                          : "bg-pink-500"
-                      } text-white px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium`}
-                    >
-                      {plan.badge}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-center mb-3 sm:mb-4">
-                    {plan.icon}
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white text-center mb-1 sm:mb-2">
-                    {plan.name}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-400 text-center mb-3 sm:mb-4">
-                    {plan.description}
-                  </p>
-                  <div className="text-2xl sm:text-3xl font-bold text-purple-400 text-center mb-4 sm:mb-6">
-                    <span className="text-xl sm:text-2xl">{plan.price}</span>
-                    {!plan.enterprise && (
-                      <span className="text-sm sm:text-lg text-gray-500">
-                        /month
-                      </span>
-                    )}
-                  </div>
-                  <ul className="space-y-2 sm:space-y-4 mb-6 sm:mb-8 flex-grow">
-                    {plan.features.map((feature, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start space-x-2 sm:space-x-3 text-xs sm:text-sm md:text-base text-gray-300"
-                      >
-                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={() =>
-                      navigate(plan.enterprise ? "/contact" : "/auth")
-                    }
-                    className={`w-full py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center mt-auto focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1 focus:ring-offset-black ${
-                      plan.enterprise
-                        ? "bg-black/30 text-white/80 hover:text-white border border-white/10 hover:border-purple-500/20"
-                        : "bg-white/5 hover:bg-white/10 text-white/90 hover:text-white border border-white/10 hover:border-purple-500/20"
-                    }`}
-                  >
-                    <span className="inline-flex whitespace-nowrap text-center text-sm sm:text-base">
-                      {plan.enterprise ? "Contact Sales" : "Get Started"}
-                    </span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-6">
-                Why Choose AstraPix
-              </h2>
-              <p className="text-base sm:text-xl text-gray-300 max-w-3xl mx-auto">
-                Experience the future of AI-powered image generation
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-8">
-              {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="p-4 sm:p-6 bg-black/40 backdrop-blur-sm rounded-xl border border-white/20 hover:border-purple-500/50 transition-all group"
-                >
-                  <div className="mb-3 sm:mb-4 relative">
-                    <div className="relative z-10">{feature.icon}</div>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-1 sm:mb-2 group-hover:text-purple-400 transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
-                    {feature.description}
-                  </p>
                   <div className="flex flex-wrap gap-1 sm:gap-2">
-                    {feature.details.map((detail, index) => (
+                    {step.subpoints.map((subpoint, index) => (
                       <span
                         key={index}
                         className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-purple-500/10 rounded-full text-xs text-purple-300 border border-purple-500/20"
                       >
-                        {detail}
+                        {subpoint}
                       </span>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    {step.demoImages.map((image, index) => (
+                      <div key={index} className="mb-2 last:mb-0">
+                        <img
+                          src={image.src}
+                          alt={image.caption}
+                          className="w-full h-auto rounded-lg shadow-md"
+                          loading="lazy"
+                          width="400"
+                          height="300"
+                          fetchpriority="low"
+                        />
+                        <p className="text-xs text-gray-400 text-center mt-1">
+                          {image.caption}
+                        </p>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -705,9 +593,79 @@ const LandingPage = () => {
           </div>
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-8 sm:mb-16">
-              What Our Users Say
-            </h2>
+            <div className="text-center mb-8 sm:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
+                Pricing Plans
+              </h2>
+              <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+                Choose the plan that best fits your needs. All plans include
+                unlimited access to our AI image generation features.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+              {pricingPlans.map((plan) => (
+                <div
+                  key={plan.name}
+                  className={`${
+                    plan.popular ? "bg-purple-500/10" : "bg-black/40"
+                  } rounded-xl p-4 sm:p-6 border border-white/20 transition-all group hover:border-purple-400/30`}
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-500 mr-3">
+                        {plan.icon}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-semibold text-white truncate">
+                        {plan.name}
+                      </h3>
+                      <p className="text-sm text-purple-400">
+                        {plan.popular && (
+                          <span className="bg-purple-500/20 text-purple-500 rounded-full px-2 py-0.5 text-xs font-medium mr-2">
+                            {plan.badge}
+                          </span>
+                        )}
+                        <span className="font-bold text-white">
+                          {plan.price}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-4">
+                    {plan.features.map((feature, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center text-sm text-gray-300"
+                      >
+                        <Check className="w-4 h-4 text-purple-400 mr-2" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => navigate("/auth")}
+                      className="w-full px-4 py-2 sm:px-6 sm:py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8 sm:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
+                What Our Users Say
+              </h2>
+              <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
+                Don't just take our word for it. Here's what our users have to
+                say about AstraPix:
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
               {testimonials.map((testimonial) => (
                 <div

@@ -52,6 +52,7 @@ export default {
     },
     fontFamily: {
       sans: ["Atkinson Hyperlegible", "sans-serif"],
+      serif: ["Instrument Serif", "serif"],
     },
   },
   variants: {
