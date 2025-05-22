@@ -23,7 +23,7 @@ export const prompts = [
   "Wind spirits dancing in autumn leaves",
   "Crystalline mountains at sunset",
   "Lighthouse beaming rainbow light",
-  "Mirror world where shadows are colorful"
+  "Mirror world where shadows are colorful",
 ];
 
 export const getRandomPrompt = (currentPrompt) => {

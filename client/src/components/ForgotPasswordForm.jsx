@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
-import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import { toast, Toaster } from 'react-hot-toast';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import axios from "axios";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { toast, Toaster } from "react-hot-toast";
 
 const formTransition = {
   duration: 0.2,
-  ease: "easeInOut"
+  ease: "easeInOut",
 };
 
 const ForgotPasswordForm = ({ onBack }) => {
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [newPassword, setNewPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [newPassword, setNewPassword] = useState("");
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [canResend, setCanResend] = useState(false);
@@ -33,7 +33,7 @@ const ForgotPasswordForm = ({ onBack }) => {
     let timer;
     if (!canResend && countdown > 0) {
       timer = setInterval(() => {
-        setCountdown(prev => {
+        setCountdown((prev) => {
           if (prev <= 1) {
             setCanResend(true);
             return 0;
@@ -55,87 +55,96 @@ const ForgotPasswordForm = ({ onBack }) => {
   const handleSendOTP = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
-    
-    if (!email || !email.includes('@')) {
-      toast.error('Please enter a valid email address');
+
+    if (!email || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
     setIsSubmitting(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_BASE_URI}/api/forgot-password`, 
+        `${import.meta.env.VITE_BASE_URI}/api/forgot-password`,
         { email },
-        { timeout: 8000 }
+        { timeout: 8000 },
       );
-      toast.success('OTP sent! Check your email.');
+      toast.success("OTP sent! Check your email.");
       setStep(2);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send OTP');
+      toast.error(error.response?.data?.message || "Failed to send OTP");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleOtpChange = useCallback((index, value) => {
-    if (!/^\d*$/.test(value)) return;
+  const handleOtpChange = useCallback(
+    (index, value) => {
+      if (!/^\d*$/.test(value)) return;
 
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    if (value && index < 5) {
-      otpRefs.current[index + 1].current.focus();
-    } else if (value && index === 5) {
-      passwordInputRef.current?.focus();
-    }
-  }, [otp]);
-
-  const handleKeyDown = useCallback((index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1].current.focus();
-    }
-  }, [otp]);
-
-  const handlePaste = useCallback((e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text');
-    const digits = pastedData.replace(/\D/g, '').slice(0, 6).split('');
-    
-    if (digits.length) {
       const newOtp = [...otp];
-      digits.forEach((digit, index) => {
-        if (index < 6) newOtp[index] = digit;
-      });
+      newOtp[index] = value;
       setOtp(newOtp);
-      
-      // Focus the appropriate field after paste
-      if (digits.length < 6) {
-        otpRefs.current[digits.length].current.focus();
-      } else {
+
+      if (value && index < 5) {
+        otpRefs.current[index + 1].current.focus();
+      } else if (value && index === 5) {
         passwordInputRef.current?.focus();
       }
-    }
-  }, [otp]);
+    },
+    [otp],
+  );
+
+  const handleKeyDown = useCallback(
+    (index, e) => {
+      if (e.key === "Backspace" && !otp[index] && index > 0) {
+        otpRefs.current[index - 1].current.focus();
+      }
+    },
+    [otp],
+  );
+
+  const handlePaste = useCallback(
+    (e) => {
+      e.preventDefault();
+      const pastedData = e.clipboardData.getData("text");
+      const digits = pastedData.replace(/\D/g, "").slice(0, 6).split("");
+
+      if (digits.length) {
+        const newOtp = [...otp];
+        digits.forEach((digit, index) => {
+          if (index < 6) newOtp[index] = digit;
+        });
+        setOtp(newOtp);
+
+        // Focus the appropriate field after paste
+        if (digits.length < 6) {
+          otpRefs.current[digits.length].current.focus();
+        } else {
+          passwordInputRef.current?.focus();
+        }
+      }
+    },
+    [otp],
+  );
 
   const handleResendOTP = async () => {
     if (!canResend || isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
       await axios.post(
         `${import.meta.env.VITE_BASE_URI}/api/forgot-password`,
         { email },
-        { timeout: 8000 }
+        { timeout: 8000 },
       );
-      toast.success('New OTP sent!');
+      toast.success("New OTP sent!");
       setCanResend(false);
       setCountdown(60);
-      setOtp(['', '', '', '', '', '']);
+      setOtp(["", "", "", "", "", ""]);
       // Focus first OTP input after resend
       setTimeout(() => otpRefs.current[0].current.focus(), 100);
     } catch (error) {
-      toast.error('Failed to resend OTP');
+      toast.error("Failed to resend OTP");
     } finally {
       setIsSubmitting(false);
     }
@@ -145,15 +154,15 @@ const ForgotPasswordForm = ({ onBack }) => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    const otpString = otp.join('');
+    const otpString = otp.join("");
     if (otpString.length !== 6) {
-      toast.error('Please enter a valid 6-digit OTP');
+      toast.error("Please enter a valid 6-digit OTP");
       otpRefs.current[0].current.focus();
       return;
     }
 
     if (newPassword.length < 8 || newPassword.length > 16) {
-      toast.error('Password must be between 8 and 16 characters');
+      toast.error("Password must be between 8 and 16 characters");
       passwordInputRef.current.focus();
       return;
     }
@@ -165,21 +174,24 @@ const ForgotPasswordForm = ({ onBack }) => {
         {
           email,
           otp: otpString,
-          newPassword
+          newPassword,
         },
-        { timeout: 8000 }
+        { timeout: 8000 },
       );
 
       if (response.data && response.status === 200) {
-        toast.success('Password updated successfully! Redirecting to login...');
+        toast.success("Password updated successfully! Redirecting to login...");
         setTimeout(() => onBack(), 1500);
       } else {
-        toast.error('Failed to reset password. Please try again.');
+        toast.error("Failed to reset password. Please try again.");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Verification failed. Please try again.');
+      toast.error(
+        error.response?.data?.message ||
+          "Verification failed. Please try again.",
+      );
       if (error.response?.status === 400) {
-        setOtp(['', '', '', '', '', '']);
+        setOtp(["", "", "", "", "", ""]);
         otpRefs.current[0].current.focus();
       }
     } finally {
@@ -195,9 +207,11 @@ const ForgotPasswordForm = ({ onBack }) => {
       transition={formTransition}
       className="p-4 sm:p-6 md:p-12 col-span-2 md:col-span-1"
     >
-      <Toaster position={window.innerWidth < 640 ? 'bottom-center' : 'top-right'} />
+      <Toaster
+        position={window.innerWidth < 640 ? "bottom-center" : "top-right"}
+      />
       <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-3 sm:mb-4">
-        {step === 1 ? 'Reset Password' : 'Verify OTP'}
+        {step === 1 ? "Reset Password" : "Verify OTP"}
       </h2>
       {step === 2 && (
         <div className="space-y-1 sm:space-y-2 mb-4 sm:mb-6 md:mb-8">
@@ -212,7 +226,9 @@ const ForgotPasswordForm = ({ onBack }) => {
       {step === 1 ? (
         <form onSubmit={handleSendOTP} className="space-y-4 sm:space-y-6">
           <div>
-            <label htmlFor="email" className="sr-only">Email Address</label>
+            <label htmlFor="email" className="sr-only">
+              Email Address
+            </label>
             <input
               id="email"
               ref={emailInputRef}
@@ -233,20 +249,25 @@ const ForgotPasswordForm = ({ onBack }) => {
             aria-busy={isSubmitting}
           >
             {isSubmitting ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mx-auto" aria-hidden="true" />
+              <Loader2
+                className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mx-auto"
+                aria-hidden="true"
+              />
             ) : (
-              'Send OTP'
+              "Send OTP"
             )}
           </button>
         </form>
       ) : (
         <form onSubmit={handleVerifyOTP} className="space-y-4 sm:space-y-6">
-          <div 
+          <div
             className="flex gap-1 sm:gap-2 justify-between mb-2 sm:mb-4"
             role="group"
             aria-labelledby="otp-label"
           >
-            <span id="otp-label" className="sr-only">One-time password, 6 digits</span>
+            <span id="otp-label" className="sr-only">
+              One-time password, 6 digits
+            </span>
             {otp.map((digit, index) => (
               <input
                 key={index}
@@ -274,11 +295,13 @@ const ForgotPasswordForm = ({ onBack }) => {
               className="text-purple-400 hover:text-purple-300 disabled:text-gray-500 text-xs sm:text-sm touch-manipulation focus:outline-none focus:underline"
               aria-live="polite"
             >
-              {canResend ? 'Resend OTP' : `Resend OTP in ${countdown}s`}
+              {canResend ? "Resend OTP" : `Resend OTP in ${countdown}s`}
             </button>
           </div>
           <div>
-            <label htmlFor="newPassword" className="sr-only">New Password</label>
+            <label htmlFor="newPassword" className="sr-only">
+              New Password
+            </label>
             <input
               id="newPassword"
               ref={passwordInputRef}
@@ -293,7 +316,9 @@ const ForgotPasswordForm = ({ onBack }) => {
               aria-required="true"
               autoComplete="new-password"
             />
-            <p className="text-white/50 text-xs mt-1">Password must be 8-16 characters</p>
+            <p className="text-white/50 text-xs mt-1">
+              Password must be 8-16 characters
+            </p>
           </div>
           <button
             type="submit"
@@ -302,9 +327,12 @@ const ForgotPasswordForm = ({ onBack }) => {
             aria-busy={isSubmitting}
           >
             {isSubmitting ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mx-auto" aria-hidden="true" />
+              <Loader2
+                className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mx-auto"
+                aria-hidden="true"
+              />
             ) : (
-              'Reset Password'
+              "Reset Password"
             )}
           </button>
         </form>

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2, ClipboardCheck } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Loader2, ClipboardCheck } from "lucide-react";
 
 const OTPVerificationForm = ({
   email,
@@ -9,38 +9,41 @@ const OTPVerificationForm = ({
   isSubmitting,
   error,
   handleVerifyOTP,
-  resendOTP
+  resendOTP,
 }) => {
   const [resendCountdown, setResendCountdown] = useState(0);
   const inputRefs = useRef([]);
-  
+
   // Handle clipboard paste
   const handlePaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
-    
+    const pastedData = e.clipboardData
+      .getData("text")
+      .replace(/[^0-9]/g, "")
+      .slice(0, 6);
+
     if (pastedData) {
       // Fill available digits
-      const newOtp = otp.split('');
+      const newOtp = otp.split("");
       for (let i = 0; i < pastedData.length; i++) {
         if (i < 6) newOtp[i] = pastedData[i];
       }
-      setOtp(newOtp.join(''));
-      
+      setOtp(newOtp.join(""));
+
       // Focus the next empty input or the last input if all filled
-      const nextEmptyIndex = newOtp.findIndex(digit => !digit);
+      const nextEmptyIndex = newOtp.findIndex((digit) => !digit);
       const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
       inputRefs.current[focusIndex]?.focus();
     }
   };
 
   const handleOTPChange = (e, index) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
+    const value = e.target.value.replace(/[^0-9]/g, "");
     if (value.length <= 1) {
-      const newOtp = otp.split('');
+      const newOtp = otp.split("");
       newOtp[index] = value;
-      setOtp(newOtp.join(''));
-      
+      setOtp(newOtp.join(""));
+
       // Auto-focus next input
       if (value && index < 5) {
         inputRefs.current[index + 1]?.focus();
@@ -49,23 +52,26 @@ const OTPVerificationForm = ({
   };
 
   const handleKeyDown = (e, index) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
-    } else if (e.key === 'ArrowLeft' && index > 0) {
+    } else if (e.key === "ArrowLeft" && index > 0) {
       inputRefs.current[index - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && index < 5) {
+    } else if (e.key === "ArrowRight" && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
-  
+
   // Handle resend countdown
   useEffect(() => {
     if (resendCountdown > 0) {
-      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+      const timer = setTimeout(
+        () => setResendCountdown(resendCountdown - 1),
+        1000,
+      );
       return () => clearTimeout(timer);
     }
   }, [resendCountdown]);
-  
+
   const handleResendClick = () => {
     resendOTP();
     setResendCountdown(30); // Set a 30-second cooldown
@@ -73,7 +79,7 @@ const OTPVerificationForm = ({
 
   // Auto-submit when all digits are filled
   useEffect(() => {
-    if (otp.length === 6 && !otp.includes('') && !isSubmitting) {
+    if (otp.length === 6 && !otp.includes("") && !isSubmitting) {
       // Optional: Auto-submit after a short delay
       // const timer = setTimeout(() => handleVerifyOTP(), 500);
       // return () => clearTimeout(timer);
@@ -94,16 +100,19 @@ const OTPVerificationForm = ({
       <p className="text-xs sm:text-sm md:text-base text-white/80 mb-4 sm:mb-5 md:mb-6">
         Please enter the 6-digit verification code sent to {email}
       </p>
-      <form onSubmit={handleVerifyOTP} className="space-y-3 sm:space-y-4 md:space-y-6">
+      <form
+        onSubmit={handleVerifyOTP}
+        className="space-y-3 sm:space-y-4 md:space-y-6"
+      >
         <div className="flex flex-col space-y-2">
           <div className="flex gap-1 sm:gap-2 md:gap-4 justify-between">
             {[...Array(6)].map((_, index) => (
               <input
                 key={index}
                 id={`otp-${index}`}
-                ref={el => inputRefs.current[index] = el}
+                ref={(el) => (inputRefs.current[index] = el)}
                 type="text"
-                value={otp[index] || ''}
+                value={otp[index] || ""}
                 onChange={(e) => handleOTPChange(e, index)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
                 onPaste={index === 0 ? handlePaste : undefined}
@@ -118,15 +127,20 @@ const OTPVerificationForm = ({
             ))}
           </div>
           <p className="text-xs text-white/50 text-center">
-            <button 
-              type="button" 
-              onClick={() => navigator.clipboard.readText().then(text => {
-                const pastedData = text.replace(/[^0-9]/g, '');
-                if (pastedData) {
-                  const e = { preventDefault: () => {}, clipboardData: { getData: () => pastedData } };
-                  handlePaste(e);
-                }
-              })}
+            <button
+              type="button"
+              onClick={() =>
+                navigator.clipboard.readText().then((text) => {
+                  const pastedData = text.replace(/[^0-9]/g, "");
+                  if (pastedData) {
+                    const e = {
+                      preventDefault: () => {},
+                      clipboardData: { getData: () => pastedData },
+                    };
+                    handlePaste(e);
+                  }
+                })
+              }
               className="inline-flex items-center gap-1 text-purple-400 hover:text-purple-300 focus:outline-none focus:underline"
               aria-label="Paste code from clipboard"
             >
@@ -134,13 +148,13 @@ const OTPVerificationForm = ({
             </button>
           </p>
         </div>
-        
+
         {error && (
           <p className="text-red-400 text-xs sm:text-sm" role="alert">
             {error}
           </p>
         )}
-        
+
         <button
           type="submit"
           disabled={isSubmitting || !otp || otp.length !== 6}
@@ -149,24 +163,27 @@ const OTPVerificationForm = ({
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center">
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" aria-hidden="true" />
+              <Loader2
+                className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2"
+                aria-hidden="true"
+              />
               Verifying...
             </span>
           ) : (
-            'Verify OTP'
+            "Verify OTP"
           )}
         </button>
       </form>
-      
+
       <button
         onClick={handleResendClick}
         disabled={isSubmitting || resendCountdown > 0}
         className="w-full mt-3 sm:mt-4 py-1.5 sm:py-2 text-white/70 hover:text-white transition-colors text-xs sm:text-sm touch-manipulation focus:outline-none focus:underline"
         aria-label="Resend verification code"
       >
-        {resendCountdown > 0 
-          ? `Resend OTP (${resendCountdown}s)` 
-          : 'Resend OTP'}
+        {resendCountdown > 0
+          ? `Resend OTP (${resendCountdown}s)`
+          : "Resend OTP"}
       </button>
     </motion.div>
   );

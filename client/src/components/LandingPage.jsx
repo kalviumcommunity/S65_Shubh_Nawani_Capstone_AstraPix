@@ -33,8 +33,8 @@ const LandingPage = () => {
       setIsMobile(window.innerWidth <= 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile, { passive: true });
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile, { passive: true });
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
@@ -63,7 +63,9 @@ const LandingPage = () => {
 
   useEffect(() => {
     // Apply passive option to all scroll listeners
-    window.addEventListener("scroll", throttledScrollHandler, { passive: true });
+    window.addEventListener("scroll", throttledScrollHandler, {
+      passive: true,
+    });
     return () => window.removeEventListener("scroll", throttledScrollHandler);
   }, [throttledScrollHandler]);
 
@@ -80,7 +82,7 @@ const LandingPage = () => {
             () => {
               videoRef.current?.play();
             },
-            { once: true, passive: true }
+            { once: true, passive: true },
           );
         }
       }
@@ -128,7 +130,11 @@ const LandingPage = () => {
       title: "AI-Powered Generation",
       description:
         "Create stunning images using state-of-the-art AI models with DALL-E 3 and Stable Diffusion XL integration. Achieve photorealistic quality and artistic excellence.",
-      details: ["Next-gen AI models", "Custom style transfer", "Real-time preview"],
+      details: [
+        "Next-gen AI models",
+        "Custom style transfer",
+        "Real-time preview",
+      ],
     },
     {
       icon: <Shield className="w-6 h-6 text-purple-400" />,
@@ -439,14 +445,14 @@ const LandingPage = () => {
         </nav>
 
         {showScrollIndicator() && (
-          <motion.div 
+          <motion.div
             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 hidden md:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: scrollProgress < 0.1 ? 1 : 0 }}
             transition={{ duration: 0.3 }}
           >
             <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-1">
-              <motion.div 
+              <motion.div
                 className="w-1.5 h-1.5 bg-white rounded-full"
                 animate={{ y: [0, 20, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -465,13 +471,15 @@ const LandingPage = () => {
                   transition={{ duration: 0.8, type: "spring" }}
                   className="space-y-2 sm:space-y-4 mb-8 sm:mb-12"
                 >
-                  <h1 className="text-xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-9xl font-serif relative py-12 px-12">
-                    <div className="absolute inset-0 bg-white/10 backdrop-blur-lg rounded-xl -z-10"></div>
+                  <h1 className="text-lg sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-mono font-semibold relative py-12 px-12">
+                    <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-xl -z-10"></div>
                     <span className="block text-white mb-1 sm:mb-2 md:mb-4 transition-colors duration-300">
                       Unleash Your
-                      </span>
-                      <span className="block text-transparent bg-clip-text bg-white transition-all duration-300">
-                      Creative <em>Vision</em>
+                    </span>
+                    <span className="block text-white bg-transparent transition-all duration-300">
+                      <em className="bg-gradient-to-r from-violet-400 to-pink-500 bg-clip-text text-transparent">
+                        Creative Vision
+                      </em>
                     </span>
                   </h1>
                 </motion.div>
@@ -604,8 +612,8 @@ const LandingPage = () => {
                     plan.popular
                       ? "border-purple-500"
                       : plan.badge === "Best Value"
-                      ? "border-pink-500"
-                      : "border-white/10"
+                        ? "border-pink-500"
+                        : "border-white/10"
                   } relative hover:bg-black/50 transition-all flex flex-col`}
                 >
                   {plan.badge && (

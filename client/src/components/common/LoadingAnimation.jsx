@@ -1,17 +1,17 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import Logo from './Logo';
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
+import Logo from "./Logo";
 
 const LoadingAnimation = () => {
   // Pre-calculate particle positions to avoid recalculating on every render
   const particles = useMemo(() => {
     // Reduce number of particles for better performance
     const count = window.innerWidth < 768 ? 30 : 50;
-    
+
     return Array.from({ length: count }, (_, i) => ({
       id: i,
-      initialX: Math.random() * 100 + '%', 
-      initialY: Math.random() * 100 + '%',
+      initialX: Math.random() * 100 + "%",
+      initialY: Math.random() * 100 + "%",
       scale: Math.random() * 0.5 + 0.5,
       animationDuration: Math.random() * 3 + 2,
     }));
@@ -26,9 +26,9 @@ const LoadingAnimation = () => {
   }, []);
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black flex items-center justify-center z-50 overflow-hidden"
-      role="alert" 
+      role="alert"
       aria-live="polite"
       aria-label="Loading application"
     >
@@ -38,16 +38,16 @@ const LoadingAnimation = () => {
           <motion.div
             key={particle.id}
             className="absolute w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"
-            style={{ 
-              left: particle.initialX, 
+            style={{
+              left: particle.initialX,
               top: particle.initialY,
               willChange: "transform, opacity",
               contain: "layout",
-              backfaceVisibility: "hidden"
+              backfaceVisibility: "hidden",
             }}
-            initial={{ 
+            initial={{
               scale: particle.scale,
-              opacity: 0
+              opacity: 0,
             }}
             animate={{
               x: ["0%", "10%", "-10%", "0%"],
@@ -59,7 +59,7 @@ const LoadingAnimation = () => {
               duration: particle.animationDuration,
               repeat: Infinity,
               ease: "easeInOut",
-              repeatType: "mirror"
+              repeatType: "mirror",
             }}
           />
         ))}
@@ -69,10 +69,10 @@ const LoadingAnimation = () => {
         {/* Outer rotating gradients - performance optimized */}
         <motion.div
           className="absolute -inset-20 sm:-inset-40 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-purple-600/10 blur-3xl"
-          style={{ 
+          style={{
             willChange: "transform",
             backfaceVisibility: "hidden",
-            transform: "translateZ(0)"
+            transform: "translateZ(0)",
           }}
           animate={{
             rotate: [0, 360],
@@ -81,19 +81,19 @@ const LoadingAnimation = () => {
             duration: 8,
             repeat: Infinity,
             ease: "linear",
-            repeatType: "loop"
+            repeatType: "loop",
           }}
           aria-hidden="true"
         />
-        
+
         {/* Pulsing rings with reduced DOM operations */}
         {pulseRings.map((ring) => (
           <motion.div
             key={ring.id}
             className="absolute -inset-16 sm:-inset-24 rounded-full border border-purple-500/20"
-            style={{ 
+            style={{
               willChange: "transform, opacity",
-              transform: "translateZ(0)"
+              transform: "translateZ(0)",
             }}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{
@@ -105,7 +105,7 @@ const LoadingAnimation = () => {
               delay: ring.delay,
               repeat: Infinity,
               ease: "easeOut",
-              repeatType: "loop"
+              repeatType: "loop",
             }}
             aria-hidden="true"
           />
@@ -121,20 +121,20 @@ const LoadingAnimation = () => {
               duration: 1,
               type: "spring",
               stiffness: 70,
-              damping: 15
+              damping: 15,
             }}
             className="relative"
-            style={{ 
+            style={{
               willChange: "transform",
-              transform: "translateZ(0)"
+              transform: "translateZ(0)",
             }}
           >
-            <div 
-              className="absolute inset-0 bg-purple-500/20 blur-3xl animate-pulse" 
+            <div
+              className="absolute inset-0 bg-purple-500/20 blur-3xl animate-pulse"
               aria-hidden="true"
             />
-            <Logo 
-              className="w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] md:w-[500px] md:h-[500px] drop-shadow-[0_0_25px_rgba(168,85,247,0.5)]" 
+            <Logo
+              className="w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] md:w-[500px] md:h-[500px] drop-shadow-[0_0_25px_rgba(168,85,247,0.5)]"
               aria-label="AstraPix logo"
             />
           </motion.div>
@@ -146,7 +146,7 @@ const LoadingAnimation = () => {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="space-y-1 sm:space-y-2"
           >
-            <motion.span 
+            <motion.span
               className="text-2xl sm:text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 block drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
               animate={{
                 backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
@@ -155,11 +155,11 @@ const LoadingAnimation = () => {
                 duration: 3,
                 repeat: Infinity,
                 ease: "linear",
-                repeatType: "loop"
+                repeatType: "loop",
               }}
-              style={{ 
+              style={{
                 backgroundSize: "200% auto",
-                willChange: "background-position"
+                willChange: "background-position",
               }}
             >
               AstraPix

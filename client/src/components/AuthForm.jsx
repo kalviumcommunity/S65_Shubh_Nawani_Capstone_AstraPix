@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import GoogleIcon from '../assets/google.png';
+import React, { useState, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import GoogleIcon from "../assets/google.png";
 
 // Optimize motion animations
 const pageTransition = {
   duration: 0.2,
-  ease: "easeInOut"
+  ease: "easeInOut",
 };
 
 const AuthForm = ({
@@ -17,9 +17,9 @@ const AuthForm = ({
   isSubmitting,
   error,
   handleGoogleLogin,
-  onForgotPassword
+  onForgotPassword,
 }) => {
-  const [passwordError, setPasswordError] = useState('');
+  const [passwordError, setPasswordError] = useState("");
 
   // Memoize password validation criteria
   const passwordValidation = useMemo(() => {
@@ -27,39 +27,59 @@ const AuthForm = ({
   }, []);
 
   // Optimize password change handler with useCallback
-  const handlePasswordChange = useCallback((e) => {
-    const value = e.target.value;
-    if (!isLogin && (value.length < passwordValidation.minLength || value.length > passwordValidation.maxLength)) {
-      setPasswordError(`Password must be between ${passwordValidation.minLength} and ${passwordValidation.maxLength} characters`);
-    } else {
-      setPasswordError('');
-    }
-    handleChange(e);
-  }, [isLogin, handleChange, passwordValidation]);
+  const handlePasswordChange = useCallback(
+    (e) => {
+      const value = e.target.value;
+      if (
+        !isLogin &&
+        (value.length < passwordValidation.minLength ||
+          value.length > passwordValidation.maxLength)
+      ) {
+        setPasswordError(
+          `Password must be between ${passwordValidation.minLength} and ${passwordValidation.maxLength} characters`,
+        );
+      } else {
+        setPasswordError("");
+      }
+      handleChange(e);
+    },
+    [isLogin, handleChange, passwordValidation],
+  );
 
   // Optimize form submission with useCallback
-  const handleFormSubmit = useCallback((e) => {
-    e.preventDefault();
-    
-    // Only validate password on register
-    if (!isLogin && (formData.password.length < passwordValidation.minLength || 
-                     formData.password.length > passwordValidation.maxLength)) {
-      setPasswordError(`Password must be between ${passwordValidation.minLength} and ${passwordValidation.maxLength} characters`);
-      return;
-    }
-    
-    handleSubmit(e);
-  }, [isLogin, formData.password, handleSubmit, passwordValidation]);
+  const handleFormSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+
+      // Only validate password on register
+      if (
+        !isLogin &&
+        (formData.password.length < passwordValidation.minLength ||
+          formData.password.length > passwordValidation.maxLength)
+      ) {
+        setPasswordError(
+          `Password must be between ${passwordValidation.minLength} and ${passwordValidation.maxLength} characters`,
+        );
+        return;
+      }
+
+      handleSubmit(e);
+    },
+    [isLogin, formData.password, handleSubmit, passwordValidation],
+  );
 
   // Compute button text based on component state
   const buttonText = useMemo(() => {
     if (isSubmitting) return null;
-    return isLogin ? 'Sign In' : 'Create Account';
+    return isLogin ? "Sign In" : "Create Account";
   }, [isLogin, isSubmitting]);
-  
+
   // Generate password hint text
   const passwordHintText = useMemo(() => {
-    return passwordError || `Password must be between ${passwordValidation.minLength} and ${passwordValidation.maxLength} characters`;
+    return (
+      passwordError ||
+      `Password must be between ${passwordValidation.minLength} and ${passwordValidation.maxLength} characters`
+    );
   }, [passwordError, passwordValidation]);
 
   return (
@@ -72,9 +92,12 @@ const AuthForm = ({
       className="p-3 sm:p-4 md:p-12 w-full max-w-md mx-auto"
     >
       <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-6 md:mb-8">
-        {isLogin ? 'Sign In' : 'Create Account'}
+        {isLogin ? "Sign In" : "Create Account"}
       </h2>
-      <form onSubmit={handleFormSubmit} className="space-y-3 sm:space-y-4 md:space-y-6">
+      <form
+        onSubmit={handleFormSubmit}
+        className="space-y-3 sm:space-y-4 md:space-y-6"
+      >
         <div className="space-y-3 sm:space-y-4">
           <input
             type="email"
@@ -101,20 +124,22 @@ const AuthForm = ({
                 autoComplete={isLogin ? "current-password" : "new-password"}
                 aria-label="Password"
                 aria-invalid={!!passwordError}
-                aria-describedby={!isLogin ? "password-requirements" : undefined}
+                aria-describedby={
+                  !isLogin ? "password-requirements" : undefined
+                }
               />
             </div>
             {!isLogin && (
-              <p 
+              <p
                 id="password-requirements"
-                className={`text-xs ${passwordError ? 'text-red-400' : 'text-white/50'}`}
+                className={`text-xs ${passwordError ? "text-red-400" : "text-white/50"}`}
               >
                 {passwordHintText}
               </p>
             )}
           </div>
         </div>
-        
+
         {isLogin && (
           <div className="text-right">
             <button
@@ -126,13 +151,13 @@ const AuthForm = ({
             </button>
           </div>
         )}
-        
+
         {error && (
           <p className="text-red-400 text-xs sm:text-sm" role="alert">
             {error}
           </p>
         )}
-        
+
         <button
           type="submit"
           disabled={isSubmitting}
@@ -140,13 +165,16 @@ const AuthForm = ({
           aria-busy={isSubmitting}
         >
           {isSubmitting ? (
-            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin mx-auto" aria-hidden="true" />
+            <Loader2
+              className="w-5 h-5 sm:w-6 sm:h-6 animate-spin mx-auto"
+              aria-hidden="true"
+            />
           ) : (
             buttonText
           )}
         </button>
       </form>
-      
+
       <div className="mt-4 sm:mt-6">
         <button
           onClick={handleGoogleLogin}
@@ -154,7 +182,12 @@ const AuthForm = ({
           type="button"
           aria-label="Continue with Google"
         >
-          <img src={GoogleIcon} alt="" className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+          <img
+            src={GoogleIcon}
+            alt=""
+            className="w-4 h-4 sm:w-5 sm:h-5"
+            aria-hidden="true"
+          />
           <span className="text-sm sm:text-base">Continue with Google</span>
         </button>
       </div>

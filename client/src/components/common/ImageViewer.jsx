@@ -1,6 +1,6 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
 const ImageViewer = ({ image, isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -13,17 +13,20 @@ const ImageViewer = ({ image, isOpen, onClose }) => {
         exit={{ opacity: 0 }}
         onClick={onClose}
         className="fixed inset-0 z-50 overflow-hidden touch-none"
-        style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+        style={{
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
       >
         <div className="absolute inset-0 bg-black/70" />
-        
+
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", duration: 0.3 }}
           className="relative z-50 min-h-screen flex items-center justify-center p-2 sm:p-4"
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={onClose}
@@ -37,7 +40,7 @@ const ImageViewer = ({ image, isOpen, onClose }) => {
             src={image?.imageUrl}
             alt={image?.prompt || "Generated image"}
             className="max-w-full max-h-[75vh] sm:max-h-[85vh] rounded-lg shadow-2xl object-contain"
-            style={{ willChange: 'transform' }}
+            style={{ willChange: "transform" }}
             layoutId={`image-${image?._id}`}
           />
         </motion.div>

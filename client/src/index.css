@@ -15,7 +15,8 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  html, body {
+  html,
+  body {
     overscroll-behavior: none;
     overflow-x: hidden;
     touch-action: pan-y pinch-zoom;

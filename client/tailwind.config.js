@@ -52,7 +52,7 @@ export default {
     },
     fontFamily: {
       sans: ["Atkinson Hyperlegible", "sans-serif"],
-      serif: ["Instrument Serif", "serif"],
+      mono: ["Geist Mono", "monospace"],
     },
   },
   variants: {
@@ -64,8 +64,5 @@ export default {
       scrollSnapType: ["responsive"],
     },
   },
-  plugins: [
-    require("@tailwindcss/forms"),
-    require("@tailwindcss/typography"),
-  ],
+  plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],
 };
