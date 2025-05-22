@@ -465,12 +465,13 @@ const LandingPage = () => {
                   transition={{ duration: 0.8, type: "spring" }}
                   className="space-y-2 sm:space-y-4 mb-8 sm:mb-12"
                 >
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-bold">
+                  <h1 className="text-xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-9xl font-serif relative py-12 px-12">
+                    <div className="absolute inset-0 bg-white/10 backdrop-blur-lg rounded-xl -z-10"></div>
                     <span className="block text-white mb-1 sm:mb-2 md:mb-4 transition-colors duration-300">
                       Unleash Your
-                    </span>
-                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 transition-all duration-300">
-                      Creative Vision
+                      </span>
+                      <span className="block text-transparent bg-clip-text bg-white transition-all duration-300">
+                      Creative <em>Vision</em>
                     </span>
                   </h1>
                 </motion.div>
