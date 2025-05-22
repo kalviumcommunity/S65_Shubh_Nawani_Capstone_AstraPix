@@ -3,19 +3,19 @@ const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
 const creditCheck = require("../middlewares/creditCheck");
 const {
-  generateImage,
-  getUserImages,
-  deleteImage,
-  uploadMiddleware,
+    generateImage,
+    getUserImages,
+    deleteImage,
+    uploadMiddleware,
 } = require("../controllers/imageController");
 
 // Generate image - add authMiddleware before uploadMiddleware
 router.post(
-  "/generate",
-  authMiddleware,
-  creditCheck,
-  uploadMiddleware,
-  generateImage,
+    "/generate",
+    authMiddleware,
+    creditCheck,
+    uploadMiddleware,
+    generateImage,
 );
 
 // Get user's gallery
