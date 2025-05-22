@@ -1,4 +1,4 @@
-const Image = require('../models/Image'); // Import the Image model
+const Image = require("../models/Image"); // Import the Image model
 
 exports.generateImage = async (req, res) => {
     try {
@@ -10,7 +10,7 @@ exports.generateImage = async (req, res) => {
             userId,
             prompt,
             imageUrl: result.secure_url,
-            generatedAt: new Date()
+            generatedAt: new Date(),
         });
 
         const savedImage = await newImage.save();
@@ -20,9 +20,8 @@ exports.generateImage = async (req, res) => {
             cloudinaryUrl: result.secure_url,
             imageId: savedImage._id,
             generatedAt: savedImage.generatedAt,
-            createdAt: savedImage.createdAt
+            createdAt: savedImage.createdAt,
         });
-
     } catch (error) {
         // ...existing error handling...
     }
@@ -32,16 +31,16 @@ exports.getGallery = async (req, res) => {
     try {
         const images = await Image.find()
             .sort({ generatedAt: -1 })
-            .select('_id imageUrl prompt generatedAt createdAt')
+            .select("_id imageUrl prompt generatedAt createdAt")
             .lean();
 
         res.json({
             success: true,
-            images: images.map(img => ({
+            images: images.map((img) => ({
                 ...img,
                 generatedAt: img.generatedAt.toISOString(),
-                createdAt: img.createdAt.toISOString()
-            }))
+                createdAt: img.createdAt.toISOString(),
+            })),
         });
     } catch (error) {
         // ...existing error handling...

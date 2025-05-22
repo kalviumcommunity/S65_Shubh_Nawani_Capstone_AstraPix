@@ -1,27 +1,27 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const imageSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        ref: "User",
+        required: true,
     },
     prompt: {
         type: String,
-        required: true
+        required: true,
     },
     imageUrl: {
         type: String,
-        required: true
+        required: true,
     },
     cloudinaryId: {
         type: String,
-        required: true
+        required: true,
     },
     timestamp: {
         type: Date,
-        default: Date.now
-    }
+        default: Date.now,
+    },
 });
 
-module.exports = mongoose.model('Image', imageSchema);
+module.exports = mongoose.model("Image", imageSchema);

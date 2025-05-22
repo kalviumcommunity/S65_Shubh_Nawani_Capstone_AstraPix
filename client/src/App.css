@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply antialiased text-gray-900 dark:text-gray-100;
-  }
+    body {
+        @apply antialiased text-gray-900 dark:text-gray-100;
+    }
 }
 
 @layer utilities {
-  .backdrop-blur-md {
-    backdrop-filter: blur(12px);
-  }
-  
-  .backdrop-blur-sm {
-    backdrop-filter: blur(4px);
-  }
+    .backdrop-blur-md {
+        backdrop-filter: blur(12px);
+    }
+
+    .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+    }
 }

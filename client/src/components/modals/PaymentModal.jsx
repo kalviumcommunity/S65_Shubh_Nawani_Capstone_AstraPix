@@ -1,174 +1,231 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-hot-toast';
-import { Sparkles, Shield, Check, Loader, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-hot-toast";
+import { Sparkles, Shield, Check, Loader, X } from "lucide-react";
 
 const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [verifying, setVerifying] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
-    const [loadingState, setLoadingState] = useState('');
-    
+    const [loadingState, setLoadingState] = useState("");
+
     const modalRef = useRef(null);
     const closeButtonRef = useRef(null);
-    
+
     // Plans data memoized to prevent re-creation on each render
-    const plans = React.useMemo(() => [
-        { 
-            id: 'basic',
-            credits: 10, 
-            amount: 99900,
-            perCredit: '₹999/credit',
-            description: 'Perfect for trying out the service',
-            features: ['Basic access', '10 unique generations', 'Standard support']
-        },
-        { 
-            id: 'popular',
-            credits: 25, 
-            amount: 199900,
-            perCredit: '₹799/credit',
-            popular: true,
-            description: 'Most popular choice for creators',
-            features: ['Everything in Basic', '25 unique generations', 'Priority support']
-        },
-        { 
-            id: 'premium',
-            credits: 50, 
-            amount: 299900,
-            perCredit: '₹599/credit',
-            description: 'Best value for power users',
-            features: ['Everything in Popular', '50 unique generations', 'Premium support']
-        }
-    ], []);
+    const plans = React.useMemo(
+        () => [
+            {
+                id: "basic",
+                credits: 10,
+                amount: 99900,
+                perCredit: "₹999/credit",
+                description: "Perfect for trying out the service",
+                features: [
+                    "Basic access",
+                    "10 unique generations",
+                    "Standard support",
+                ],
+            },
+            {
+                id: "popular",
+                credits: 25,
+                amount: 199900,
+                perCredit: "₹799/credit",
+                popular: true,
+                description: "Most popular choice for creators",
+                features: [
+                    "Everything in Basic",
+                    "25 unique generations",
+                    "Priority support",
+                ],
+            },
+            {
+                id: "premium",
+                credits: 50,
+                amount: 299900,
+                perCredit: "₹599/credit",
+                description: "Best value for power users",
+                features: [
+                    "Everything in Popular",
+                    "50 unique generations",
+                    "Premium support",
+                ],
+            },
+        ],
+        [],
+    );
 
     // Focus management
     useEffect(() => {
         if (isOpen) {
             // Focus trap inside modal
             const handleTabKey = (e) => {
-                if (e.key === 'Tab') {
-                    const focusableElements = modalRef.current?.querySelectorAll(
-                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                    );
-                    
+                if (e.key === "Tab") {
+                    const focusableElements =
+                        modalRef.current?.querySelectorAll(
+                            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+                        );
+
                     if (!focusableElements?.length) return;
-                    
+
                     const firstElement = focusableElements[0];
-                    const lastElement = focusableElements[focusableElements.length - 1];
-                    
+                    const lastElement =
+                        focusableElements[focusableElements.length - 1];
+
                     if (e.shiftKey && document.activeElement === firstElement) {
                         lastElement.focus();
                         e.preventDefault();
-                    } else if (!e.shiftKey && document.activeElement === lastElement) {
+                    } else if (
+                        !e.shiftKey &&
+                        document.activeElement === lastElement
+                    ) {
                         firstElement.focus();
                         e.preventDefault();
                     }
                 }
             };
-            
+
             // Handle escape key
             const handleEscapeKey = (e) => {
-                if (e.key === 'Escape' && !loading && !verifying) {
+                if (e.key === "Escape" && !loading && !verifying) {
                     onClose();
                 }
             };
-            
-            document.addEventListener('keydown', handleTabKey);
-            document.addEventListener('keydown', handleEscapeKey);
-            
+
+            document.addEventListener("keydown", handleTabKey);
+            document.addEventListener("keydown", handleEscapeKey);
+
             // Lock body scroll
-            document.body.style.overflow = 'hidden';
-            
+            document.body.style.overflow = "hidden";
+
             // Auto focus first interactive element
             setTimeout(() => {
                 closeButtonRef.current?.focus();
             }, 100);
-            
+
             return () => {
-                document.removeEventListener('keydown', handleTabKey);
-                document.removeEventListener('keydown', handleEscapeKey);
-                document.body.style.overflow = '';
+                document.removeEventListener("keydown", handleTabKey);
+                document.removeEventListener("keydown", handleEscapeKey);
+                document.body.style.overflow = "";
             };
         }
     }, [isOpen, loading, verifying, onClose]);
 
-    const handlePayment = useCallback(async (plan) => {
-        if (loading) return;
-        setLoading(true);
-        setSelectedPlan(plan);
-        setLoadingState('initiating');
-        
-        try {
-            const { data } = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/payment/create-order`, {
-                amount: plan.amount,
-                credits: plan.credits
-            });
+    const handlePayment = useCallback(
+        async (plan) => {
+            if (loading) return;
+            setLoading(true);
+            setSelectedPlan(plan);
+            setLoadingState("initiating");
 
-            const options = {
-                key: data.keyId,
-                amount: data.amount,
-                currency: data.currency,
-                name: 'AstraPix',
-                description: `${plan.credits} Credits Purchase`,
-                order_id: data.orderId,
-                handler: async (response) => {
-                    try {
-                        setVerifying(true);
-                        setLoadingState('verifying');
-                        const verifyData = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/payment/verify-payment`, {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-                        setLoadingState('success');
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        onSuccess(verifyData.data.credits);
-                        onClose();
-                        toast.success('Payment successful! Credits added to your account.', {
-                            position: window.innerWidth < 640 ? 'bottom-center' : 'top-right',
-                            duration: 4000
-                        });
-                    } catch (error) {
-                        console.error('Payment verification failed:', error);
-                        setLoadingState('error');
-                        toast.error(error.response?.data?.message || 'Payment verification failed', {
-                            position: window.innerWidth < 640 ? 'bottom-center' : 'top-right'
-                        });
-                    } finally {
-                        setVerifying(false);
-                        setLoadingState('');
-                    }
-                },
-                theme: { color: '#7C3AED' },
-                prefill: {
-                    name: 'AstraPix User',
-                    contact: '',
-                    email: ''
-                },
-                modal: {
-                    ondismiss: function() {
-                        setLoading(false);
-                        setSelectedPlan(null);
-                        setLoadingState('');
+            try {
+                const { data } = await axios.post(
+                    `${import.meta.env.VITE_BASE_URI}/api/payment/create-order`,
+                    {
+                        amount: plan.amount,
+                        credits: plan.credits,
                     },
-                    animation: true,
-                    backdropclose: false
-                }
-            };
+                );
 
-            const razorpay = new window.Razorpay(options);
-            razorpay.open();
-        } catch (error) {
-            console.error('Failed to initiate payment:', error);
-            setLoadingState('error');
-            toast.error(error.response?.data?.message || 'Failed to initiate payment', {
-                position: window.innerWidth < 640 ? 'bottom-center' : 'top-right'
-            });
-        } finally {
-            setLoading(false);
-        }
-    }, [loading, onClose, onSuccess]);
+                const options = {
+                    key: data.keyId,
+                    amount: data.amount,
+                    currency: data.currency,
+                    name: "AstraPix",
+                    description: `${plan.credits} Credits Purchase`,
+                    order_id: data.orderId,
+                    handler: async (response) => {
+                        try {
+                            setVerifying(true);
+                            setLoadingState("verifying");
+                            const verifyData = await axios.post(
+                                `${import.meta.env.VITE_BASE_URI}/api/payment/verify-payment`,
+                                {
+                                    razorpay_order_id:
+                                        response.razorpay_order_id,
+                                    razorpay_payment_id:
+                                        response.razorpay_payment_id,
+                                    razorpay_signature:
+                                        response.razorpay_signature,
+                                },
+                            );
+                            setLoadingState("success");
+                            await new Promise((resolve) =>
+                                setTimeout(resolve, 1000),
+                            );
+                            onSuccess(verifyData.data.credits);
+                            onClose();
+                            toast.success(
+                                "Payment successful! Credits added to your account.",
+                                {
+                                    position:
+                                        window.innerWidth < 640
+                                            ? "bottom-center"
+                                            : "top-right",
+                                    duration: 4000,
+                                },
+                            );
+                        } catch (error) {
+                            console.error(
+                                "Payment verification failed:",
+                                error,
+                            );
+                            setLoadingState("error");
+                            toast.error(
+                                error.response?.data?.message ||
+                                    "Payment verification failed",
+                                {
+                                    position:
+                                        window.innerWidth < 640
+                                            ? "bottom-center"
+                                            : "top-right",
+                                },
+                            );
+                        } finally {
+                            setVerifying(false);
+                            setLoadingState("");
+                        }
+                    },
+                    theme: { color: "#7C3AED" },
+                    prefill: {
+                        name: "AstraPix User",
+                        contact: "",
+                        email: "",
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            setLoading(false);
+                            setSelectedPlan(null);
+                            setLoadingState("");
+                        },
+                        animation: true,
+                        backdropclose: false,
+                    },
+                };
+
+                const razorpay = new window.Razorpay(options);
+                razorpay.open();
+            } catch (error) {
+                console.error("Failed to initiate payment:", error);
+                setLoadingState("error");
+                toast.error(
+                    error.response?.data?.message ||
+                        "Failed to initiate payment",
+                    {
+                        position:
+                            window.innerWidth < 640
+                                ? "bottom-center"
+                                : "top-right",
+                    },
+                );
+            } finally {
+                setLoading(false);
+            }
+        },
+        [loading, onClose, onSuccess],
+    );
 
     const handleCloseModal = useCallback(() => {
         if (!loading && !verifying) {
@@ -177,11 +234,19 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
     }, [loading, verifying, onClose]);
 
     // Handle background click
-    const handleBackdropClick = useCallback((e) => {
-        if (modalRef.current && !modalRef.current.contains(e.target) && !loading && !verifying) {
-            onClose();
-        }
-    }, [loading, verifying, onClose]);
+    const handleBackdropClick = useCallback(
+        (e) => {
+            if (
+                modalRef.current &&
+                !modalRef.current.contains(e.target) &&
+                !loading &&
+                !verifying
+            ) {
+                onClose();
+            }
+        },
+        [loading, verifying, onClose],
+    );
 
     if (!isOpen) return null;
 
@@ -210,15 +275,22 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                             role="status"
                             aria-live="polite"
                         >
-                            <Loader className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 animate-spin mb-2 sm:mb-4" aria-hidden="true" />
+                            <Loader
+                                className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 animate-spin mb-2 sm:mb-4"
+                                aria-hidden="true"
+                            />
                             <p className="text-white/80 text-base sm:text-lg font-medium text-center">
-                                {loadingState === 'initiating' && 'Initiating payment...'}
-                                {loadingState === 'verifying' && 'Verifying payment...'}
-                                {loadingState === 'success' && 'Payment successful!'}
-                                {loadingState === 'error' && 'Payment failed'}
+                                {loadingState === "initiating" &&
+                                    "Initiating payment..."}
+                                {loadingState === "verifying" &&
+                                    "Verifying payment..."}
+                                {loadingState === "success" &&
+                                    "Payment successful!"}
+                                {loadingState === "error" && "Payment failed"}
                             </p>
-                            {(loadingState === 'initiating' || loadingState === 'verifying') && (
-                                <motion.div 
+                            {(loadingState === "initiating" ||
+                                loadingState === "verifying") && (
+                                <motion.div
                                     className="h-1 bg-purple-500/20 w-36 sm:w-48 mt-3 sm:mt-4 rounded-full overflow-hidden"
                                     aria-hidden="true"
                                 >
@@ -231,7 +303,7 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                                             repeat: Infinity,
                                             duration: 1.5,
                                             ease: "linear",
-                                            repeatType: "mirror"
+                                            repeatType: "mirror",
                                         }}
                                         style={{ willChange: "transform" }}
                                     />
@@ -252,8 +324,14 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                 >
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" aria-hidden="true" />
-                            <h2 id="payment-modal-title" className="text-xl sm:text-2xl font-bold text-white">
+                            <Sparkles
+                                className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400"
+                                aria-hidden="true"
+                            />
+                            <h2
+                                id="payment-modal-title"
+                                className="text-xl sm:text-2xl font-bold text-white"
+                            >
                                 Purchase Credits
                             </h2>
                         </div>
@@ -269,7 +347,8 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <p className="text-white/60 text-sm sm:text-base max-w-md mx-auto text-center mb-6">
-                        Power up your creativity with AstraPix credits. Choose a plan that suits your needs.
+                        Power up your creativity with AstraPix credits. Choose a
+                        plan that suits your needs.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8">
@@ -282,9 +361,9 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                                 disabled={loading || verifying}
                                 className={`w-full p-3 sm:p-6 rounded-lg border-2 relative text-left h-full flex flex-col touch-manipulation ${
                                     selectedPlan === plan
-                                        ? 'border-purple-500 bg-purple-500/10'
-                                        : 'border-white/10 hover:border-purple-500/50'
-                                } ${(loading || verifying) ? 'opacity-50 cursor-not-allowed' : ''} transition-all group focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900`}
+                                        ? "border-purple-500 bg-purple-500/10"
+                                        : "border-white/10 hover:border-purple-500/50"
+                                } ${loading || verifying ? "opacity-50 cursor-not-allowed" : ""} transition-all group focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900`}
                                 aria-label={`Purchase ${plan.credits} credits for ₹${(plan.amount / 100).toLocaleString()}`}
                             >
                                 {plan.popular && (
@@ -300,10 +379,15 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                                                 <span className="text-xl sm:text-2xl font-bold text-white">
                                                     {plan.credits} Credits
                                                 </span>
-                                                <p className="text-purple-400 text-xs sm:text-sm mt-0.5 sm:mt-1">{plan.perCredit}</p>
+                                                <p className="text-purple-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+                                                    {plan.perCredit}
+                                                </p>
                                             </div>
                                             <span className="text-2xl sm:text-3xl font-bold text-white">
-                                                ₹{(plan.amount / 100).toLocaleString()}
+                                                ₹
+                                                {(
+                                                    plan.amount / 100
+                                                ).toLocaleString()}
                                             </span>
                                         </div>
                                         <p className="text-white/60 text-xs sm:text-sm">
@@ -313,8 +397,14 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
 
                                     <div className="space-y-2 sm:space-y-3 flex-grow">
                                         {plan.features.map((feature, idx) => (
-                                            <div key={idx} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-white/80">
-                                                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 shrink-0" aria-hidden="true" />
+                                            <div
+                                                key={idx}
+                                                className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-white/80"
+                                            >
+                                                <Check
+                                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 shrink-0"
+                                                    aria-hidden="true"
+                                                />
                                                 <span>{feature}</span>
                                             </div>
                                         ))}
@@ -326,8 +416,13 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 border-t border-white/10 pt-4 sm:pt-6">
                         <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-purple-500/10 rounded-lg w-full sm:w-auto">
-                            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" aria-hidden="true" />
-                            <span className="text-xs sm:text-sm text-white/80">Secure payment powered by Razorpay</span>
+                            <Shield
+                                className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400"
+                                aria-hidden="true"
+                            />
+                            <span className="text-xs sm:text-sm text-white/80">
+                                Secure payment powered by Razorpay
+                            </span>
                         </div>
 
                         <div className="flex gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -339,7 +434,7 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
                             >
                                 Close
                             </button>
-                            <a 
+                            <a
                                 href="mailto:support@astrapix.com"
                                 className="px-3 sm:px-4 py-2 text-purple-400 hover:text-purple-300 transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-gray-900 focus:ring-offset-1 rounded-md"
                                 aria-label="Email support"

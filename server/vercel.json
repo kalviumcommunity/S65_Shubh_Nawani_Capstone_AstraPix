@@ -1,24 +1,24 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "headers": {
-        "Access-Control-Allow-Origin": "https://astrapix.vercel.app",
-        "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
-        "Access-Control-Allow-Credentials": "true",
-        "Cache-Control": "s-maxage=0"
-      },
-      "dest": "server.js",
-      "continue": true
-    }
-  ],
-  "regions": ["bom1"]
+    "version": 2,
+    "builds": [
+        {
+            "src": "server.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "headers": {
+                "Access-Control-Allow-Origin": "https://astrapix.vercel.app",
+                "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+                "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
+                "Access-Control-Allow-Credentials": "true",
+                "Cache-Control": "s-maxage=0"
+            },
+            "dest": "server.js",
+            "continue": true
+        }
+    ],
+    "regions": ["bom1"]
 }
