@@ -1,198 +1,380 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Loader2, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 import BackgroundImage from '../assets/bg.jpg';
-import Logo from '../assets/logo.jpg';
-import GoogleIcon from '../assets/google.png';
+import Logo from './common/Logo';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import AuthForm from './AuthForm';
+import OTPVerificationForm from './OTPVerificationForm';
+import ForgotPasswordForm from './ForgotPasswordForm.jsx';
+
+// Simplified animation variants
+const pageTransition = {
+  type: "tween",
+  duration: 0.15 // Reduced from 0.2
+};
 
 const AuthPage = () => {
   const { login } = useAuth();
-  const { darkMode, toggleTheme } = useTheme();
+  const { darkMode, toggleTheme } = useContext(ThemeContext);
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOTPInput, setShowOTPInput] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
+  
+  // Add a ref to track submission to prevent duplicate requests
+  const isSubmittingRef = useRef(false);
 
-  const handleToggle = () => {
+  // Theme-aware styles
+  const themeStyles = {
+    // Background overlay
+    bgOverlay: darkMode 
+      ? 'bg-gradient-to-br from-purple-900/50 to-indigo-600/50'
+      : 'bg-gradient-to-br from-purple-100/70 to-indigo-100/70',
+    
+    // Main container background
+    containerBg: darkMode
+      ? 'bg-white/10 backdrop-blur-md'
+      : 'bg-white/80 backdrop-blur-md',
+    
+    // Welcome panel background
+    welcomePanelBg: darkMode
+      ? 'bg-gradient-to-br from-purple-600/20 to-indigo-600/20'
+      : 'bg-gradient-to-br from-purple-200/60 to-indigo-200/60',
+    
+    // Text colors
+    primaryText: darkMode ? 'text-white' : 'text-gray-800',
+    secondaryText: darkMode ? 'text-white/80' : 'text-gray-600',
+    
+    // Button styles
+    primaryButton: darkMode
+      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+      : 'bg-purple-500 hover:bg-purple-600 text-white',
+    
+    outlineButton: darkMode
+      ? 'border-white/50 text-white hover:bg-white/10'
+      : 'border-gray-600/50 text-gray-700 hover:bg-gray-100/50',
+    
+    // Theme toggle button
+    themeToggle: darkMode
+      ? 'bg-white/10 hover:bg-white/20'
+      : 'bg-black/10 hover:bg-black/20',
+    
+    // Theme toggle icon
+    themeIcon: darkMode ? 'text-white' : 'text-gray-800'
+  };
+
+  // Optimize form reset with proper dependency
+  const handleToggle = useCallback(() => {
     setIsLogin(!isLogin);
     setError(null);
-  };
+    setFormData({ email: '', password: '' });
+    setShowOTPInput(false);
+    setOtp('');
+  }, [isLogin]);
 
-  const handleChange = (e) => {
+  // Memoize form change handler
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8000/auth/google';
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
     setError(null);
+  }, []);
+
+  const handleGoogleLogin = useCallback(() => {
+    window.location.href = `${import.meta.env.VITE_BASE_URI}/auth/google`;
+  }, []);
+
+  // Add request timeout and improved error handling
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (isSubmitting || isSubmittingRef.current) return;
+    
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
+    setError(null);
+
     try {
-      const url = `http://localhost:8000/api/${isLogin ? 'login' : 'signup'}`;
-      const response = await axios.post(url, formData);
+      const response = await axios({
+        method: 'post',
+        url: `${import.meta.env.VITE_BASE_URI}/api/${isLogin ? 'login' : 'send-otp'}`,
+        data: isLogin ? formData : { email: formData.email },
+        timeout: 8000
+      });
+
+      if (!isLogin) {
+        setShowOTPInput(true);
+        toast.success('OTP sent to your email!', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: darkMode ? '#333' : '#fff',
+            color: darkMode ? '#fff' : '#333',
+          },
+        });
+      } else {
+        login(response.data.token, response.data.user);
+        toast.success('Welcome back!', {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: darkMode ? '#333' : '#fff',
+            color: darkMode ? '#fff' : '#333',
+          },
+        });
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 
+                          (err.code === 'ECONNABORTED' ? 'Request timed out' : 'Something went wrong');
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
+    }
+  }, [isLogin, formData, login, navigate, darkMode]);
+
+  const handleVerifyOTP = useCallback(async (e) => {
+    e.preventDefault();
+    if (isSubmitting || isSubmittingRef.current) return;
+
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
+    setError(null);
+
+    try {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/verify-otp`, {
+        email: formData.email,
+        otp
+      });
+
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/signup`, formData);
       login(response.data.token, response.data.user);
+      toast.success('Account created successfully!', {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      const errorMessage = err.response?.data?.message || 
+                          (err.code === 'ECONNABORTED' ? 'Request timed out' : 'Something went wrong');
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
-  };
+  }, [formData, otp, login, navigate, darkMode]);
+
+  const resendOTP = useCallback(async () => {
+    if (isSubmitting || isSubmittingRef.current) return;
+    
+    setIsSubmitting(true);
+    isSubmittingRef.current = true;
+    
+    try {
+      await axios.post(`${import.meta.env.VITE_BASE_URI}/api/send-otp`, {
+        email: formData.email
+      });
+      toast.success('New OTP sent!', {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
+    } catch (err) {
+      toast.error('Failed to send OTP', {
+        style: {
+          background: darkMode ? '#333' : '#fff',
+          color: darkMode ? '#fff' : '#333',
+        },
+      });
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
+    }
+  }, [formData.email, isSubmitting, darkMode]);
+
+  const handleForgotPassword = useCallback(() => {
+    setShowForgotPassword(true);
+  }, []);
+
+  const handleBackToLogin = useCallback(() => {
+    setShowForgotPassword(false);
+  }, []);
 
   return (
-    <div className={`min-h-screen relative flex items-center justify-center ${darkMode ? 'dark' : ''}`}>
-      <div 
-        className="absolute inset-0 bg-cover bg-center filter brightness-50" 
-        style={{ 
-          backgroundImage: `url(${BackgroundImage})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          zIndex: -1 
-        }}
-      />
+    <div className="min-h-screen relative overflow-hidden overscroll-none">
+      {/* Back to Landing button with theme-aware styling */}
+      <button
+        onClick={() => navigate('/')}
+        className={`fixed top-4 left-4 z-50 px-6 py-3 rounded-full ${themeStyles.primaryButton} transition-all flex items-center gap-2 touch-manipulation font-semibold shadow-lg`}
+      >
+        <span className="text-lg">←</span>
+        <span>Return to Landing</span>
+      </button>
 
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${BackgroundImage})` }}
+      >
+        <div className={`absolute inset-0 ${themeStyles.bgOverlay}`} />
+      </div>
+
+      {/* Theme Toggle - Better touch target with theme-aware colors */}
       <button
         onClick={toggleTheme}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors z-50"
-        aria-label="Toggle theme"
+        className={`fixed top-4 right-4 z-50 p-2 sm:p-3 rounded-full ${themeStyles.themeToggle} transition-colors touch-manipulation`}
+        aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
       >
         {darkMode ? 
-          <Sun className="text-yellow-500 h-5 w-5" /> : 
-          <Moon className="text-gray-600 h-5 w-5" />
+          <Sun className={`w-4 h-4 sm:w-5 sm:h-5 ${themeStyles.themeIcon}`} /> : 
+          <Moon className={`w-4 h-4 sm:w-5 sm:h-5 ${themeStyles.themeIcon}`} />
         }
       </button>
 
-      <motion.div 
-        className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden relative z-10 mx-4"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, type: 'spring', stiffness: 50 }}
-      >
-        <div className="p-8">
-          <div className="flex justify-center mb-6">
-            <div className={`p-2 rounded-full ${darkMode ? 'bg-white' : 'bg-transparent'}`}>
-              <img src={Logo} alt="AstraPix Logo" className="h-16 w-auto" />
-            </div>
-          </div>
+      {/* Main Container */}
+      <div className="relative min-h-screen flex items-center justify-center p-3 sm:p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className={`w-full max-w-sm sm:max-w-xl md:max-w-6xl grid grid-cols-1 md:grid-cols-2 ${themeStyles.containerBg} rounded-2xl overflow-hidden shadow-2xl`}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {!showForgotPassword ? (
+              <>
+                {isLogin ? (
+                  <>
+                    {/* Welcome Panel */}
+                    <motion.div
+                      key="welcome"
+                      initial={{ x: -50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 50, opacity: 0 }}
+                      transition={pageTransition}
+                      className={`p-4 sm:p-6 md:p-12 ${themeStyles.welcomePanelBg}`}
+                    >
+                      <Logo className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mb-4 sm:mb-6 md:mb-8" />
+                      <div className="space-y-3 sm:space-y-4 md:space-y-6">
+                        <h1 className={`text-xl sm:text-2xl md:text-4xl font-bold ${themeStyles.primaryText}`}>
+                          Welcome Back!
+                        </h1>
+                        <p className={`${themeStyles.secondaryText} text-xs sm:text-sm md:text-lg max-w-sm`}>
+                          Sign in to continue your creative journey with AstraPix.
+                        </p>
+                        <motion.button
+                          onClick={handleToggle}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={`px-4 sm:px-6 py-1.5 sm:py-2 md:px-8 md:py-3 border-2 ${themeStyles.outlineButton} rounded-lg transition-all touch-manipulation`}
+                        >
+                          Create Account
+                        </motion.button>
+                      </div>
+                    </motion.div>
 
-          <motion.div 
-            className="flex justify-between items-center mb-6"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
-              {isLogin ? 'Login' : 'Signup'}
-            </h2>
-            <motion.button 
-              onClick={handleToggle}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
-            >
-              {isLogin ? 'Create account' : 'Back to login'}
-            </motion.button>
-          </motion.div>
+                    {/* Login Form */}
+                    <AuthForm 
+                      isLogin={true}
+                      formData={formData}
+                      handleChange={handleChange}
+                      handleSubmit={handleSubmit}
+                      showPassword={showPassword}
+                      setShowPassword={setShowPassword}
+                      isSubmitting={isSubmitting}
+                      error={error}
+                      handleGoogleLogin={handleGoogleLogin}
+                      onForgotPassword={handleForgotPassword}
+                    />
+                  </>
+                ) : (
+                  <>
+                    {/* Register Form */}
+                    {showOTPInput ? (
+                      <OTPVerificationForm 
+                        email={formData.email}
+                        otp={otp}
+                        setOtp={setOtp}
+                        isSubmitting={isSubmitting}
+                        error={error}
+                        handleVerifyOTP={handleVerifyOTP}
+                        resendOTP={resendOTP}
+                      />
+                    ) : (
+                      <AuthForm 
+                        isLogin={false}
+                        formData={formData}
+                        handleChange={handleChange}
+                        handleSubmit={handleSubmit}
+                        showPassword={showPassword}
+                        setShowPassword={setShowPassword}
+                        isSubmitting={isSubmitting}
+                        error={error}
+                        handleGoogleLogin={handleGoogleLogin}
+                      />
+                    )}
 
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <AnimatePresence mode="wait">
-            <motion.form 
-              key={isLogin ? 'login' : 'signup'}
-              onSubmit={handleSubmit}
-              initial={{ opacity: 0, x: isLogin ? -50 : 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-gray-700 dark:text-gray-200 mb-2">Email</label>
-                <input 
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg bg-white/70 dark:bg-gray-700/70 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-800 transition duration-300"
-                  required
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-gray-700 dark:text-gray-200 mb-2">Password</label>
-                <div className="relative">
-                  <input 
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg bg-white/70 dark:bg-gray-700/70 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-800 transition duration-300 pr-12"
-                    required
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-300 transition"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition duration-300 ease-in-out transform"
-              >
-                {isLogin ? 'Login' : 'Create Account'}
-              </motion.button>
-
-              {/* Google OAuth Button */}
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                      Or continue with
-                    </span>
-                  </div>
-                </div>
-
-                <motion.button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="mt-6 w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-300"
-                >
-                  <img 
-                    src={GoogleIcon} 
-                    alt="Google" 
-                    className="h-5 w-5"
-                  />
-                  <span className="text-gray-700 dark:text-gray-200 font-medium">
-                    Continue with Google
-                  </span>
-                </motion.button>
-              </div>
-            </motion.form>
+                    {/* Welcome Register Panel */}
+                    <motion.div
+                      key="welcome-register"
+                      initial={{ x: 50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -50, opacity: 0 }}
+                      transition={pageTransition}
+                      className={`p-6 md:p-12 ${themeStyles.welcomePanelBg}`}
+                    >
+                      <Logo className="h-10 w-10 md:h-12 md:w-12 mb-6 md:mb-8" />
+                      <div className="space-y-4 md:space-y-6">
+                        <h1 className={`text-2xl md:text-4xl font-bold ${themeStyles.primaryText}`}>
+                          Start Your Journey
+                        </h1>
+                        <p className={`${themeStyles.secondaryText} text-sm md:text-lg max-w-sm`}>
+                          Already have an account? Sign in to continue your journey.
+                        </p>
+                        <motion.button
+                          onClick={handleToggle}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={`px-6 py-2 md:px-8 md:py-3 border-2 ${themeStyles.outlineButton} rounded-lg transition-all`}
+                        >
+                          Sign In
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </>
+            ) : (
+              <ForgotPasswordForm onBack={handleBackToLogin} />
+            )}
           </AnimatePresence>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 };
 
-export default AuthPage;
+export default React.memo(AuthPage);

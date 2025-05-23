@@ -1,72 +1,126 @@
+const Image = require('../models/imageModel');
+const Credit = require('../models/creditModel');
+const cloudinary = require('../config/cloudinary');
+const { uploadToCloudinary } = require('../utils/cloudinaryUtils');
 const Replicate = require("replicate");
-const { writeFile } = require("fs/promises");
-const fetch = require("node-fetch");
-const path = require("path");
-const fs = require("fs");
+const upload = require('../utils/memoryStorage');
 
-// Initialize Replicate with your API Key
 const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN, // Replace with your Replicate API Key
+    auth: process.env.REPLICATE_API_TOKEN,
 });
 
-
-
-// Image generation logic
-
 const generateImage = async (req, res) => {
-  const { prompt, userId } = req.body;
+    try {
+        const { prompt } = req.body;
+        const userId = req.user._id;
 
-  if (!prompt) {
-    return res.status(400).json({ error: "Prompt is required" });
-  }
+        if (!prompt) {
+            return res.status(400).json({
+                success: false,
+                message: "Prompt is required"
+            });
+        }
 
-  try {
-    console.log('Starting image generation with prompt:', prompt);
-    
-    const input = { prompt };
-    const output = await replicate.run(
-      "black-forest-labs/flux-schnell",
-      {input}
-    );
+        const output = await replicate.run(
+            "black-forest-labs/flux-schnell",
+            { input: { prompt } }
+        );
 
-    console.log('Replicate API Response:', output);
+        if (!Array.isArray(output) || output.length === 0) {
+            throw new Error('Invalid response from Replicate API');
+        }
 
-    if (Array.isArray(output) && output.length > 0) {
-      const imageUrl = output[0];
-      console.log('Fetching image from:', imageUrl);
+        const cloudinaryResult = await uploadToCloudinary(output[0]);
+        const image = new Image({
+            userId,
+            prompt,
+            imageUrl: cloudinaryResult.url,
+            cloudinaryId: cloudinaryResult.public_id
+        });
+        await image.save();
 
-      const resImage = await fetch(imageUrl);
-      if (!resImage.ok) {
-        throw new Error(`Failed to fetch image: ${resImage.statusText}`);
-      }
+        const userCredits = await Credit.findOne({ user: userId });
+        if (userCredits) {
+            userCredits.credit -= 1;
+            await userCredits.save();
+        }
 
-      const buffer = await resImage.buffer();
-      const filename = `generated_${Date.now()}.png`;
-      const imagePath = path.join(__dirname, '../images', filename);
-      
-      // Ensure images directory exists
-      const imagesDir = path.join(__dirname, '../images');
-      if (!fs.existsSync(imagesDir)) {
-        fs.mkdirSync(imagesDir, { recursive: true });
-      }
-
-      await writeFile(imagePath, buffer);
-      console.log('Image saved to:', imagePath);
-
-      res.status(200).json({
-        message: "Image generated successfully",
-        imageUrl: `/images/${filename}`
-      });
-    } else {
-      throw new Error('Invalid response from Replicate API');
+        res.json({
+            success: true,
+            output,
+            cloudinaryUrl: cloudinaryResult.url,
+            message: "Image generated successfully",
+            remainingCredits: userCredits ? userCredits.credit : 0
+        });
+    } catch (error) {
+        console.error('Generation error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
-  } catch (error) {
-    console.error('Error details:', error);
-    res.status(500).json({ 
-      error: "Error generating image",
-      details: error.message 
-    });
-  }
 };
 
-module.exports = { generateImage };
+const getUserImages = async (req, res) => {
+    try {
+        const images = await Image.find({ userId: req.user._id })
+            .sort({ timestamp: -1 })
+            .select('prompt imageUrl cloudinaryId timestamp')
+            .exec();
+        
+        res.status(200).json({
+            success: true,
+            images: images.map(img => ({
+                _id: img._id,
+                prompt: img.prompt,
+                imageUrl: img.imageUrl,
+                cloudinaryId: img.cloudinaryId,
+                createdAt: img.timestamp
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching gallery images'
+        });
+    }
+};
+
+const deleteImage = async (req, res) => {
+    try {
+        const image = await Image.findOne({ 
+            _id: req.params.id,
+            userId: req.user._id 
+        });
+
+        if (!image) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Image not found' 
+            });
+        }
+
+        // Delete from Cloudinary
+        await cloudinary.uploader.destroy(image.cloudinaryId);
+        
+        // Delete from database
+        await image.deleteOne();
+
+        res.json({ 
+            success: true, 
+            message: 'Image deleted successfully' 
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error deleting image' 
+        });
+    }
+};
+
+module.exports = { 
+    generateImage,
+    getUserImages, 
+    deleteImage,
+    uploadMiddleware: upload.single('image') // Export middleware separately
+};

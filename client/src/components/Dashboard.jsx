@@ -1,16 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import React, { useState, useEffect, useCallback, useMemo, useContext, Suspense, lazy, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BackgroundImage from '../assets/bg.jpg';
-import Logo from '../assets/logo.jpg';
-import { Sun, Moon, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
+import { Toaster, toast } from 'react-hot-toast';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 
+// Components
+import Navbar from './common/Navbar';
+import Footer from './common/Footer';
+import ImageGenerationForm from './dashboard/ImageGenerationForm';
+
+// Lazy load components
+const PaymentModal = lazy(() => import('./modals/PaymentModal'));
+const Gallery = lazy(() => import('./dashboard/Gallery'));
+const StatsGrid = lazy(() => import('./dashboard/StatsGrid'));
+
+// Assets
+import BackgroundImage from '../assets/bg.jpg';
+
+const CubeLoader = () => {
+  // The animation spans approximately 210px (from -25px to 185px)
+  const animationWidth = 210;
+
+  return (
+    <div className="flex justify-center items-center h-48 w-full">
+      <div 
+        className="relative"
+        style={{ 
+          width: `${animationWidth}px`,
+          height: "80px" // Enough height for the animation
+        }}
+      >
+        {[...Array(5)].map((_, index) => (
+          <motion.div
+            key={index}
+            className="absolute w-8 h-8 bg-purple-500 rounded-lg shadow-lg"
+            style={{
+              left: index * 40,
+              top: 0,
+              willChange: "transform",
+              transform: "translateZ(0)"
+            }}
+            animate={
+              index === 4
+                ? {
+                    top: [0, -40, -40, 0],
+                    left: [160, 185, -25, 0],
+                    zIndex: 10
+                  }
+                : {
+                    left: [index * 40, (index + 1) * 40]
+                  }
+            }
+            transition={{
+              duration: 1.5,
+              times: index === 4 ? [0, 0.33, 0.67, 1] : [0, 1],
+              ease: "linear",
+              repeat: Infinity
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
 const Dashboard = () => {
+  // Add ref for image generation section
+  const imageGenerationRef = useRef(null);
+
+  // Auth and Theme Context
   const { user, logout } = useAuth();
-  const { darkMode, toggleTheme } = useTheme();
+  const { darkMode, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
+
+  // State Management
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [credits, setCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,226 +85,376 @@ const Dashboard = () => {
   const [generatedImage, setGeneratedImage] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState(null);
+  const [userImages, setUserImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [galleryKey, setGalleryKey] = useState(0);
+
+  // Memoized API headers
+  const authHeaders = useMemo(() => ({
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  }), []);
+
+  // Optimized data fetching with debounce
+  const fetchUserData = useCallback(async () => {
+    try {
+      if (!user?.email) return;
+      
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      Promise.all([
+        axios.get(`${import.meta.env.VITE_BASE_URI}/check/credits/${user.email}`, { ...authHeaders, signal }),
+        axios.get(`${import.meta.env.VITE_BASE_URI}/generate/gallery`, { ...authHeaders, signal })
+      ]).then(([creditResponse, imagesResponse]) => {
+        // Set credits to 0 if no creditModel exists
+        setCredits(creditResponse.data?.credit || 0);
+        setUserImages(imagesResponse.data?.images || []);
+        setLoading(false);
+        setLoadingImages(false);
+      }).catch(err => {
+        if (!signal.aborted) {
+          // Don't show error, just set defaults
+          setCredits(0);
+          setUserImages([]);
+          setLoading(false);
+          setLoadingImages(false);
+        }
+      });
+
+      return () => controller.abort();
+    } catch (err) {
+      // Don't show error, just set defaults
+      setCredits(0);
+      setUserImages([]);
+      setLoading(false);
+      setLoadingImages(false);
+    }
+  }, [user?.email, authHeaders]);
+
+  // Add this new function after fetchUserData
+  const fetchGalleryImages = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BASE_URI}/generate/gallery`, 
+        authHeaders
+      );
+      setUserImages(response.data.images);
+      setLoadingImages(false);
+    } catch (err) {
+      console.error('Failed to fetch gallery images');
+    }
+  }, [authHeaders]);
 
   useEffect(() => {
-    const fetchCredits = async () => {
-      try {
-        if (user?.email) {
-          const response = await axios.get(`http://localhost:8000/check/credits/${user.email}`);
-          setCredits(response.data.credit);
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch credits');
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchUserData();
+  }, [fetchUserData]);
 
-    fetchCredits();
-  }, [user?.email]);
+  // Initial setup effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 2000); // Changed from 4000ms to 2000ms to show loader for 2 seconds
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handlers
+  const handleCreditUpdate = (newCredits) => {
+    setCredits(newCredits);
+    toast.success(`Credits updated! New balance: ${newCredits}`);
+  };
 
   const handleLogout = () => {
-    logout();
+    logout(); // Call auth context logout
+    localStorage.removeItem('token');
+    toast.success('Successfully logged out!', {
+      duration: 2000,
+      position: 'top-center',
+      style: {
+        background: '#333',
+        color: '#fff',
+      },
+    });
+
+    // Use navigate instead of window.location
     navigate('/auth');
   };
 
-  const handleGenerateImage = async (e) => {
-    e.preventDefault();
-    if (credits <= 0) {
-      setGenerationError('Insufficient credits. Please purchase more credits to generate images.');
-      return;
-    }
-    
-    setGenerating(true);
-    setGenerationError(null);
-
+  const handleDeleteImage = async (imageId) => {
     try {
-      const response = await axios.post('http://localhost:8000/generate/generate', {
-        prompt,
-        userId: user._id
+      const response = await axios.delete(`${import.meta.env.VITE_BASE_URI}/generate/${imageId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 
-      console.log('Generation response:', response.data);
-
-      if (response.data.imageUrl) {
-        setGeneratedImage(response.data.imageUrl);
-        // Update credits from response
-        setCredits(response.data.remainingCredits);
-      } else {
-        throw new Error('No image URL in response');
+      if (response.data.success) {
+        setUserImages(images => images.filter(img => img._id !== imageId));
+        toast.success('Image deleted successfully', {
+          duration: 3000,
+          style: {
+            background: '#10B981',
+            color: '#fff',
+          },
+          icon: '🗑️'
+        });
       }
-    } catch (err) {
-      console.error('Generation error:', err);
-      setGenerationError(
-        err.response?.data?.error || 
-        err.response?.data?.message || 
-        'Failed to generate image'
-      );
-    } finally {
-      setGenerating(false);
+    } catch (error) {
+      toast.error('Failed to delete image', {
+        duration: 3000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      });
     }
   };
 
-  const username = user?.email ? user.email.split('@')[0] : 'User';
+  // Optimized image generation
+  const handleGenerateImage = useCallback(async (e) => {
+    e.preventDefault();
+    if (!prompt.trim() || credits <= 0 || generating) return;
+    
+    setGenerating(true);
+    setGenerationError(null);
+    setGeneratedImage(null);
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URI}/generate/generate`, 
+        { prompt: prompt.trim(), userId: user._id },
+        authHeaders
+      );
+
+      if (response.data.success) {
+        setGeneratedImage(response.data.cloudinaryUrl);
+        setCredits(prev => prev - 1);
+        setPrompt('');
+        await fetchGalleryImages();
+        // Force gallery re-render by updating key
+        setGalleryKey(prev => prev + 1);
+        toast.success('Image generated successfully!', {
+          duration: 3000,
+          position: window.innerWidth < 640 ? 'bottom-center' : 'top-right',
+          style: {
+            background: '#1F2937',
+            color: '#fff',
+            maxWidth: '90vw',
+            wordBreak: 'break-word'
+          }
+        });
+      }
+    } catch (err) {
+      toast.error('Failed to generate image', {
+        duration: 3000,
+        position: window.innerWidth < 640 ? 'bottom-center' : 'top-right',
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+          maxWidth: '90vw'
+        }
+      });
+      setGenerationError('Failed to generate image. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  }, [prompt, credits, generating, user?._id, authHeaders, fetchGalleryImages]);
+
+  const scrollToGeneration = useCallback(() => {
+    if (!imageGenerationRef.current) return;
+    const yOffset = -80; // Account for header
+    const y = imageGenerationRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }, []);
+
+  // Memoized components
+  const memoizedNav = useMemo(() => (
+    <Navbar 
+      user={user}
+      credits={credits}
+      loading={loading}
+      darkMode={darkMode}
+      toggleTheme={toggleTheme}
+      handleLogout={handleLogout}
+      openPaymentModal={() => setIsPaymentModalOpen(true)}
+    />
+  ), [user, credits, loading, darkMode, handleLogout]);
+
+  const memoizedImageForm = useMemo(() => (
+    <ImageGenerationForm 
+      prompt={prompt}
+      setPrompt={setPrompt}
+      credits={credits}
+      generating={generating}
+      generatedImage={generatedImage}
+      generationError={generationError}
+      handleGenerateImage={handleGenerateImage}
+    />
+  ), [prompt, credits, generating, generatedImage, generationError, handleGenerateImage]);
+
+  // Optimize recent images with aggressive quality reduction and caching
+  const recentImagesMemo = useMemo(() => {
+    const recentImages = userImages.slice(0, 3);
+    return recentImages.map(img => ({
+      ...img,
+      // More aggressive image optimization
+      imageUrl: img.imageUrl.replace('/upload/', '/upload/w_300,q_auto:eco,f_auto/'),
+      generatedAt: img.generatedAt 
+        ? new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }).format(new Date(img.generatedAt))
+        : 'Not available',
+      createdAt: img.createdAt
+        ? new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }).format(new Date(img.createdAt))
+        : 'Not available'
+    }));
+  }, [userImages]);
+
+  // Memoize the gallery component
+  const MemoizedGallery = useMemo(() => (
+    <Gallery 
+      key={galleryKey}
+      images={recentImagesMemo}
+      loading={loadingImages}
+      onDelete={handleDeleteImage}
+      showHeaderFooter={false}
+      isMinimal={true}
+      enableVirtualization={true}
+      imageSizingHint={{ width: 300, height: 300 }}
+    />
+  ), [galleryKey, recentImagesMemo, loadingImages, handleDeleteImage]);
+
+  if (isInitializing) {
+    return (
+      <motion.div 
+        initial={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-gradient-to-br from-gray-900 to-purple-900 flex flex-col items-center justify-center"
+      >
+        <motion.div 
+          className="space-y-8 text-center"
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CubeLoader />
+          <motion.p 
+            className="text-white/80 text-lg font-medium"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            Preparing your creative space...
+          </motion.p>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen relative ${darkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen flex flex-col relative bg-gradient-to-br from-gray-900 to-purple-900">
+      <Toaster position="top-right" />
+      
       <div 
-        className="absolute inset-0 bg-cover bg-center filter brightness-50" 
+        className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 shadow-lg"
         style={{ 
-          backgroundImage: `url(${BackgroundImage})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          backgroundAttachment: 'fixed',
-          zIndex: -1 
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(17, 24, 39, 0.8)",
+          willChange: "transform",
+          transform: "translateZ(0)"
         }}
-      />
-
-      <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-50 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className={`p-1 rounded-full ${darkMode ? 'bg-white' : 'bg-transparent'}`}>
-                <img src={Logo} alt="AstraPix Logo" className="h-8 w-auto" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">AstraPix</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                  Credits: {loading ? '...' : credits}
-                </span>
-              </div>
-              <span className="text-gray-700 dark:text-gray-300 font-medium">
-                Welcome, {username}
-              </span>
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {darkMode ? 
-                  <Sun className="text-yellow-500 h-5 w-5" /> : 
-                  <Moon className="text-gray-600 h-5 w-5" />
-                }
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition duration-300 ease-in-out transform hover:scale-105"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg p-8 rounded-xl shadow-2xl transition-colors duration-300">
-          <h2 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Dashboard</h2>
-          
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <div className="mb-8">
-            <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Generate Image</h3>
-            <form onSubmit={handleGenerateImage} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                  Enter your prompt
-                </label>
-                <input
-                  type="text"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-white/90 dark:bg-gray-700/90 border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
-                  placeholder="A beautiful space scene..."
-                  disabled={generating || credits <= 0}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={generating || !prompt || credits <= 0}
-                className={`w-full py-2 px-4 rounded-lg ${
-                  generating || !prompt || credits <= 0
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-purple-600 hover:bg-purple-700'
-                } text-white font-semibold transition duration-300`}
-              >
-                {generating ? (
-                  <span className="flex items-center justify-center">
-                    <Loader2 className="animate-spin mr-2" size={20} />
-                    Generating...
-                  </span>
-                ) : credits <= 0 ? (
-                  'No credits available'
-                ) : (
-                  'Generate Image'
-                )}
-              </button>
-            </form>
-
-            {generationError && (
-              <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">
-                {generationError}
-              </div>
-            )}
-
-            {generatedImage && (
-              <div className="mt-6">
-                <h4 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Generated Image</h4>
-                <div className="relative aspect-square max-w-2xl mx-auto">
-                  <img
-                    src={`http://localhost:8000${generatedImage}`}
-                    alt="Generated artwork"
-                    className="rounded-lg shadow-xl w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error('Image load error');
-                      setGenerationError('Failed to load generated image');
-                    }}
-                  />
-                </div>
-                <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
-                  Prompt: "{prompt}"
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white/90 dark:bg-gray-700/90 p-6 rounded-lg shadow-lg transform transition duration-300 hover:scale-105">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Your Stats</h3>
-              <div className="space-y-2">
-                <p className="text-gray-600 dark:text-gray-300">
-                  Available Credits: {loading ? 'Loading...' : credits}
-                </p>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Images Generated: {generatedImage ? 1 : 0}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white/90 dark:bg-gray-700/90 p-6 rounded-lg shadow-lg transform transition duration-300 hover:scale-105">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Buy Credits</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Purchase more credits to generate images
-              </p>
-              {/* Add payment integration here */}
-            </div>
-
-            <div className="bg-white/90 dark:bg-gray-700/90 p-6 rounded-lg shadow-lg transform transition duration-300 hover:scale-105">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Your Gallery</h3>
-              <p className="text-gray-600 dark:text-gray-300">View your generated images</p>
-              {/* Add gallery feature here */}
-            </div>
-          </div>
-        </div>
+      >
+        {memoizedNav}
       </div>
+
+      <main 
+        className="flex-grow relative z-10 pt-20"
+        style={{ 
+          willChange: "transform",
+          transform: "translateZ(0)",
+          overscrollBehavior: "contain"
+        }}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px] overflow-x-hidden">
+          <div className="space-y-8">
+            <div ref={imageGenerationRef} className="bg-black/10 border border-white/10 p-4 sm:p-6 lg:p-8 rounded-xl">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-white">
+                Image Generation
+              </h2>
+              
+              {error && (
+                <div className="mb-6 p-4 bg-red-500/10 text-red-200 rounded-lg border border-red-500/20">
+                  {error}
+                </div>
+              )}
+
+              {memoizedImageForm}
+
+              <Suspense fallback={<div className="h-24 animate-pulse bg-white/5 rounded-lg" />}>
+                <StatsGrid 
+                  loading={loading}
+                  credits={credits}
+                  generatedImages={userImages}
+                  openPaymentModal={() => setIsPaymentModalOpen(true)}
+                />
+              </Suspense>
+            </div>
+
+            <div 
+              className="bg-black/10 border border-white/10 p-6 sm:p-8 rounded-xl"
+              style={{ 
+                willChange: 'transform, opacity',
+                transform: 'translateZ(0)',
+                containIntrinsicSize: '0 500px' // Add size hint
+              }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold text-white">Recent Creations</h2>
+                {userImages.length === 0 ? (
+                  <button
+                    onClick={scrollToGeneration}
+                    className="text-purple-400 hover:text-purple-300 flex items-center gap-2"
+                  >
+                    Create your first image
+                    <span aria-hidden="true">↑</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate('/gallery')}
+                    className="text-purple-400 hover:text-purple-300"
+                  >
+                    View All →
+                  </button>
+                )}
+              </div>
+              <div className="content-visibility-auto"> {/* Add content-visibility optimization */}
+                <Suspense fallback={<div className="h-96 animate-pulse bg-white/5 rounded-lg" />}>
+                  {MemoizedGallery}
+                </Suspense>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+
+      {isPaymentModalOpen && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50" />}>
+          <PaymentModal
+            isOpen={isPaymentModalOpen}
+            onClose={() => setIsPaymentModalOpen(false)}
+            onSuccess={handleCreditUpdate}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
 
-export default Dashboard;
+export default React.memo(Dashboard);

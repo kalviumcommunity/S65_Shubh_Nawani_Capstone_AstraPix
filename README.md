@@ -1,5 +1,6 @@
-### Frontend Deployed Link: https://client-omega-lovat.vercel.app/
-### Backend Deployed Link: https://s65-shubh-nawani-capstone-astrapix.onrender.com/
+<p align="center">
+  <img src="./client/src/assets/AstraPix_Logo_Dark.jpg" alt="AstraPix Logo" width="120">
+</p>
 
 # AstraPix
 

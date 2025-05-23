@@ -4,14 +4,14 @@ const bcrypt = require('bcrypt')
 
 const getUsers = async (req, res) => {
     try {
-        const users = await User.find()
+        const users = await User.find().select('-password')
 
         if (users.length === 0) {
             return res.status(200).json({message: "No users found!"})
         }
         return res.status(200).json({userDetails: users})
     } catch (err) {
-        return res.status(500).json({error: err.message})
+        return res.status(500).json({error: 'Error fetching users'})
     }
 }
 
